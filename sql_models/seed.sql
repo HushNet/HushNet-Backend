@@ -17,7 +17,7 @@ CREATE TABLE messages (
 
 CREATE TABLE devices (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   identity_pubkey TEXT NOT NULL, 
   device_label TEXT,
   push_token TEXT,
@@ -26,20 +26,13 @@ CREATE TABLE devices (
   UNIQUE(user_id, identity_pubkey)
 );
 
-CREATE TABLE signed_prekeys (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  device_id UUID REFERENCES devices(id) ON DELETE CASCADE,
-  key TEXT NOT NULL,                     -- SPK publique
-  signature TEXT NOT NULL,               -- sig(SPK, IK_priv)
-  created_at TIMESTAMP DEFAULT NOW()
-);
-
-CREATE TABLE one_time_prekeys (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  device_id UUID REFERENCES devices(id) ON DELETE CASCADE,
-  key TEXT NOT NULL,
-  used BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP DEFAULT NOW()
+CREATE TABLE device_keys (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    device_id UUID NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+    signed_prekey TEXT NOT NULL,
+    signed_prekey_sig TEXT NOT NULL,
+    one_time_prekeys JSONB NOT NULL DEFAULT '[]'::jsonb,
+    created_at TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE chats (
