@@ -1,0 +1,28 @@
+[package]
+name = "hushnet-backend"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+# Web framework
+axum = "0.7"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+
+# Logging / utils
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
+
+# JSON
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Pour la suite (facultatif mais utile déjà)
+dotenvy = "0.15"
+anyhow = "1.0"
+sqlx = { version = "0.8.6", features = ["runtime-tokio", "macros", "postgres", "uuid", "chrono"] }
+
+uuid = {version = "1.18.1", features = ["serde", "v4"]}
+chrono = {version = "0.4.42", features = ["serde"]}
+
+
