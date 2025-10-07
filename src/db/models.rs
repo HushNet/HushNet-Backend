@@ -46,3 +46,9 @@ pub struct OneTimePrekeys {
     pub used: bool,
     pub created_at: DateTime<Utc>
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UsedToken {
+    pub token_value: String,
+    pub used_at: DateTime<Utc>
+}

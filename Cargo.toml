@@ -25,5 +25,6 @@ sqlx = { version = "0.8.6", features = ["runtime-tokio", "macros", "postgres", "
 uuid = {version = "1.18.1", features = ["serde", "v4"]}
 chrono = {version = "0.4.42", features = ["serde"]}
 ed25519-dalek = "2.2.0"
+jsonwebtoken = {version = "10.0.0", features = ["rust_crypto"]}
 
 

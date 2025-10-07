@@ -2,6 +2,7 @@ mod controllers;
 mod models;
 mod repository;
 mod routes;
+mod services;
 
 use axum::Router;
 use sqlx::PgPool;

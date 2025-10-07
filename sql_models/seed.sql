@@ -67,3 +67,8 @@ CREATE TABLE sessions (
 
     UNIQUE(sender_device_id, receiver_device_id)
 );
+
+CREATE TABLE used_tokens (
+  token TEXT PRIMARY KEY,
+  used_at TIMESTAMP DEFAULT NOW()
+);
