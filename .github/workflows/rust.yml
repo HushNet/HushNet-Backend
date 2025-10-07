@@ -16,7 +16,27 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Build Postgres image
+      run: docker build -t postgres-ee -f Dockerfile .
+
+    - name: Start Postgres container
+      run: |
+        docker run -d --name postgres-ee \
+          -p 5432:5432 \
+          -e POSTGRES_USER=postgres \
+          -e POSTGRES_PASSWORD=dev \
+          -e POSTGRES_DB=e2ee \
+          postgres-ee
+
+        until docker exec postgres-ee pg_isready -U postgres > /dev/null 2>&1; do
+          echo "Waiting for Postgres to be ready..."
+          sleep 2
+        done
+        echo "Postgres is ready."
     - name: Build
       run: cargo build --verbose
     - name: Run tests
       run: cargo test --verbose
+    - name: Stop Postgres container
+      if: always()
+      run: docker rm -f postgres-ee
