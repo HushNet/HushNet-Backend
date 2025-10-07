@@ -19,20 +19,14 @@ CREATE TABLE devices (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   identity_pubkey TEXT NOT NULL, 
+  signed_prekey_pub TEXT NOT NULL,
+  signed_prekey_sig TEXT NOT NULL,
+  one_time_prekeys JSONB NOT NULL,
   device_label TEXT,
   push_token TEXT,
   last_seen TIMESTAMP DEFAULT NOW(),
   created_at TIMESTAMP DEFAULT NOW(),
   UNIQUE(user_id, identity_pubkey)
-);
-
-CREATE TABLE device_keys (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    device_id UUID NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
-    signed_prekey TEXT NOT NULL,
-    signed_prekey_sig TEXT NOT NULL,
-    one_time_prekeys JSONB NOT NULL DEFAULT '[]'::jsonb,
-    created_at TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE chats (
@@ -71,4 +65,14 @@ CREATE TABLE sessions (
 CREATE TABLE used_tokens (
   token TEXT PRIMARY KEY,
   used_at TIMESTAMP DEFAULT NOW()
+);
+
+
+CREATE TABLE pending_sessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  sender_device_id UUID,
+  recipient_device_id UUID,
+  ek_pub TEXT,
+  ciphertext TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
 );

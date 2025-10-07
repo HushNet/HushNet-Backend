@@ -22,7 +22,9 @@ pub struct Message {
 pub struct Devices {
     pub id: Uuid,
     pub user_id: Uuid,
-    pub identity_pubkeyy: String,
+    pub identity_pubkey: String,
+    pub signed_prekey: SignedPreKey,
+    pub one_time_prekeys: Vec<OneTimePrekeys>,
     pub device_label: String,
     pub push_token: String,
     pub last_seen: DateTime<Utc>,
@@ -30,21 +32,14 @@ pub struct Devices {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct SignedPrekeys {
-    pub id: Uuid,
-    pub device_id: Uuid,
-    pub key: String, // SPK Key
-    pub signature: String, // Sig (SPK, IK, prv)
-    pub created_at: DateTime<Utc>
+pub struct SignedPreKey {
+    pub key: String,
+    pub signature: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OneTimePrekeys {
-    pub id: Uuid,
-    pub device_id: Uuid,
-    pub key: String,
-    pub used: bool,
-    pub created_at: DateTime<Utc>
+    pub key: String
 }
 
 #[derive(Debug, Serialize, Deserialize)]

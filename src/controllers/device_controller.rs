@@ -6,6 +6,8 @@ use serde_json::json;
 use sqlx::PgPool;
 use uuid::{uuid, Uuid};
 
+use crate::models::device::OneTimePrekeys;
+use crate::models::device::SignedPreKey;
 use crate::repository::device_repository;
 use crate::repository::enrollment_token_repository::add_used_token;
 use crate::repository::enrollment_token_repository::enrollment_token_exists;
@@ -15,6 +17,8 @@ use crate::services::auth::verify_enrollment_token;
 pub struct CreateDeviceBody {
     pub user_id: Uuid,
     pub identity_pubkey: String,
+    pub signed_prekey: SignedPreKey,
+    pub one_time_prekeys: Vec<OneTimePrekeys>,
     pub device_label: String,
     pub push_token: String,
     pub enrollment_token: String,
@@ -60,10 +64,19 @@ pub async fn create_device(
                 .into_response();
         }
     };
+    let prekeys_json = json!(
+        payload.one_time_prekeys
+            .iter()
+            .map(|p| &p.key)
+            .collect::<Vec<_>>()
+    );
     match device_repository::create_device(
         &pool,
         &payload.user_id,
         &payload.identity_pubkey,
+        &payload.signed_prekey.key,
+        &payload.signed_prekey.signature,
+        &prekeys_json,
         &payload.device_label,
         &payload.push_token,
     )
