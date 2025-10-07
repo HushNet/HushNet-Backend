@@ -42,6 +42,8 @@ jobs:
       if: always()
       run: docker rm -f postgres-ee
     - name: Format code
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         cargo fmt
         git diff --exit-code || { git config user.name "GitHub Actions"; git config user.email "actions@github.com"; git add .; git commit -m "Auto-fix ESLint issues"; git push origin $GITHUB_REF; }
