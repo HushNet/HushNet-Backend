@@ -47,3 +47,14 @@ pub struct UsedToken {
     pub token_value: String,
     pub used_at: DateTime<Utc>
 }
+
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PendingSession {
+    pub id: Uuid,
+    pub sender_device_id: Uuid,
+    pub recipient_device_id: Uuid,
+    pub ephemeral_pubkey: String,
+    pub ciphertext: String,
+    pub created_at: DateTime<Utc>
+}

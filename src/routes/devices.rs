@@ -2,11 +2,10 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use sqlx::PgPool;
 
-use crate::controllers::device_controller;
+use crate::{app_state::AppState, controllers::device_controller};
 
-pub fn routes() -> Router<PgPool> {
+pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/users/:id/devices", post(device_controller::create_device))
         .route(

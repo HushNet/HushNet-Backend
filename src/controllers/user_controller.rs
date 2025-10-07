@@ -1,3 +1,4 @@
+use crate::app_state::AppState;
 use crate::models::user::User;
 use crate::repository::user_repository;
 use crate::services::auth::generate_enrollment_tokens;
@@ -13,19 +14,18 @@ pub struct CreateUserBody {
     pub username: String,
 }
 
-pub async fn list_users(State(pool): State<PgPool>) -> Json<Vec<User>> {
-    let users = user_repository::get_all_users(&pool).await.unwrap();
+pub async fn list_users(State(state): State<AppState>) -> Json<Vec<User>> {
+    let users = user_repository::get_all_users(&state.pool).await.unwrap();
     Json(users)
 }
 
 pub async fn create_user(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     Json(payload): Json<CreateUserBody>,
 ) -> impl IntoResponse {
-    match user_repository::create_user(&pool, &payload.username).await {
+    match user_repository::create_user(&state.pool, &payload.username).await {
         Ok(user) => {
-            let secret: String = std::env::var("JWT_SECRET").unwrap();
-            let token: String = generate_enrollment_tokens(&user.id, &secret);
+            let token: String = generate_enrollment_tokens(&user.id, &state.jwt_secret);
             (
                 StatusCode::CREATED,
                 Json(json!({

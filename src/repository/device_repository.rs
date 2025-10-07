@@ -62,3 +62,33 @@ pub async fn get_devices_by_user_id(
 
     Ok(devices)
 }
+
+pub async fn get_device_by_identity_key(
+    pool: &PgPool,
+    id_key: &str,
+) -> Result<Devices, sqlx::Error> {
+    let devices = sqlx::query_as!(
+        Devices,
+        r#"
+        SELECT
+            id,
+            user_id,
+            identity_pubkey,
+            signed_prekey_pub,
+            signed_prekey_sig,
+            one_time_prekeys,
+            device_label,
+            push_token,
+            last_seen,
+            created_at
+        FROM devices
+        WHERE identity_pubkey = $1
+        ORDER BY created_at DESC
+        "#,
+        id_key
+    )
+    .fetch_one(pool)
+    .await?;
+
+    Ok(devices)
+}

@@ -70,9 +70,9 @@ CREATE TABLE used_tokens (
 
 CREATE TABLE pending_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  sender_device_id UUID,
-  recipient_device_id UUID,
-  ek_pub TEXT,
-  ciphertext TEXT,
+  sender_device_id UUID NOT NULL REFERENCES devices(id),
+  recipient_device_id UUID NOT NULL REFERENCES devices(id),
+  ephemeral_pubkey TEXT NOT NULL,
+  ciphertext TEXT NOT NULL,
   created_at TIMESTAMP DEFAULT NOW()
 );
