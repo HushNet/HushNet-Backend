@@ -39,7 +39,7 @@ pub async fn get_devices_for_user(
                     "error": "Internal server error"
                 })),
             )
-                .into_response()
+                .into_response();
         }
     }
 }

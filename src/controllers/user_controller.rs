@@ -32,7 +32,8 @@ pub async fn create_user(
                     "user": user,
                     "enrollment_token": token
                 })),
-            ).into_response()
+            )
+                .into_response()
         }
         Err(e) => {
             if let sqlx::Error::Database(db_err) = &e {
@@ -50,7 +51,7 @@ pub async fn create_user(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({ "error": "Error creating user" })),
             )
-            .into_response()
+                .into_response()
         }
     }
 }

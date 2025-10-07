@@ -21,6 +21,7 @@ pub fn verify_enrollment_token(token: &str, secret: &str) -> Option<Uuid> {
         token,
         &DecodingKey::from_secret(secret.as_bytes()),
         &Validation::default(),
-    ).ok()?;
+    )
+    .ok()?;
     Uuid::parse_str(&data.claims.sub).ok()
 }

@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -8,5 +8,5 @@ pub struct DeviceKeys {
     pub signed_prekey: String,
     pub signed_prekey_sig: String,
     pub one_time_prekeys: serde_json::Value,
-    pub created_at: Option<chrono::NaiveDateTime>
+    pub created_at: Option<chrono::NaiveDateTime>,
 }

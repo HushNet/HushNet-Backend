@@ -1,5 +1,5 @@
 use chrono::NaiveDateTime;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use uuid::Uuid;
 
@@ -25,5 +25,5 @@ pub struct SignedPreKey {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OneTimePrekeys {
-    pub key: String
+    pub key: String,
 }
