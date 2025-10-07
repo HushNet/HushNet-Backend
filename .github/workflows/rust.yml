@@ -8,6 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  DATABASE_URL: postgres://postgres:dev@localhost:5432/e2ee
 
 jobs:
   build:
