@@ -16,16 +16,21 @@ pub struct CreateSessionBody {
 }
 
 pub async fn create_session(
-        State(pool): State<PgPool>,
-        AuthenticatedDevice(sender): AuthenticatedDevice,
+    State(pool): State<PgPool>,
+    AuthenticatedDevice(sender): AuthenticatedDevice,
     Json(payload): Json<CreateSessionBody>,
-    
 ) -> impl IntoResponse {
-    match session_repository::create_session(&pool, &sender.id, &payload.recipient_device_id, &payload.ephemeral_pubkey, &payload.ciphertext).await {
-        Ok(data) => {
-            return (StatusCode::OK, Json(data)).into_response()
-        }
-                Err(e) => {
+    match session_repository::create_session(
+        &pool,
+        &sender.id,
+        &payload.recipient_device_id,
+        &payload.ephemeral_pubkey,
+        &payload.ciphertext,
+    )
+    .await
+    {
+        Ok(data) => return (StatusCode::OK, Json(data)).into_response(),
+        Err(e) => {
             eprintln!("Error when creating session {}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,

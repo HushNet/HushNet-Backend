@@ -1,7 +1,7 @@
+use crate::models::session::PendingSession;
+use chrono::NaiveDateTime;
 use sqlx::{PgPool, Result};
 use uuid::Uuid;
-use chrono::NaiveDateTime;
-use crate::models::session::PendingSession;
 
 pub async fn create_session(
     pool: &PgPool,
