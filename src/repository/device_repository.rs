@@ -32,3 +32,33 @@ pub async fn create_device(
 
     Ok(device)
 }
+
+pub async fn get_devices_by_user_id(
+    pool: &PgPool,
+    user_id: &Uuid,
+) -> Result<Vec<Devices>, sqlx::Error> {
+    let devices = sqlx::query_as!(
+        Devices,
+        r#"
+        SELECT
+            id,
+            user_id,
+            identity_pubkey,
+            signed_prekey_pub,
+            signed_prekey_sig,
+            one_time_prekeys,
+            device_label,
+            push_token,
+            last_seen,
+            created_at
+        FROM devices
+        WHERE user_id = $1
+        ORDER BY created_at DESC
+        "#,
+        user_id
+    )
+    .fetch_all(pool)
+    .await?;
+
+    Ok(devices)
+}

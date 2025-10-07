@@ -5,5 +5,6 @@ use crate::controllers::device_controller;
 
 pub fn routes() -> Router<PgPool> {
     Router::new()
-        .route("/devices/create", post(device_controller::create_device))
+        .route("/users/:id/devices", post(device_controller::create_device))
+        .route("/users/:id/devices", get(device_controller::get_devices_for_user))
 }

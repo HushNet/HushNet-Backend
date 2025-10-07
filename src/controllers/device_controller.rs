@@ -1,5 +1,6 @@
 use std::ptr::null;
 
+use axum::extract::Path;
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use serde::Deserialize;
 use serde_json::json;
@@ -22,6 +23,25 @@ pub struct CreateDeviceBody {
     pub device_label: String,
     pub push_token: String,
     pub enrollment_token: String,
+}
+
+pub async fn get_devices_for_user(
+    State(pool): State<PgPool>,
+    Path(user_id): Path<Uuid>,
+) -> impl IntoResponse {
+    match device_repository::get_devices_by_user_id(&pool, &user_id).await {
+        Ok(data) => return (StatusCode::OK, Json(data)).into_response(),
+        Err(e) => {
+            eprintln!("Error when fetching devices {}", e);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "Internal server error"
+                })),
+            )
+                .into_response()
+        }
+    }
 }
 
 pub async fn create_device(
@@ -64,12 +84,11 @@ pub async fn create_device(
                 .into_response();
         }
     };
-    let prekeys_json = json!(
-        payload.one_time_prekeys
-            .iter()
-            .map(|p| &p.key)
-            .collect::<Vec<_>>()
-    );
+    let prekeys_json = json!(payload
+        .one_time_prekeys
+        .iter()
+        .map(|p| &p.key)
+        .collect::<Vec<_>>());
     match device_repository::create_device(
         &pool,
         &payload.user_id,
