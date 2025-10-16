@@ -25,6 +25,7 @@ async fn main() -> Result<(), anyhow::Error> {
     let app: Router = Router::new()
         .merge(routes::users::routes())
         .merge(routes::devices::routes())
+        .merge(routes::root::routes())
         .with_state(state);
     let addr = SocketAddr::from(([127, 0, 0, 1], 8080));
 
