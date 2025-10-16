@@ -27,7 +27,7 @@ jobs:
           -e POSTGRES_USER=postgres \
           -e POSTGRES_PASSWORD=dev \
           -e POSTGRES_DB=e2ee \
-          postgres-ee
+          postgres
 
         until docker exec postgres-ee pg_isready -U postgres > /dev/null 2>&1; do
           echo "Waiting for Postgres to be ready..."

@@ -1,9 +1,9 @@
 mod controllers;
+mod middlewares;
 mod models;
 mod repository;
 mod routes;
 mod services;
-mod middlewares;
 use axum::Router;
 use sqlx::PgPool;
 use std::net::SocketAddr;

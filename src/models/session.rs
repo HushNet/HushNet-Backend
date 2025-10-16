@@ -9,5 +9,5 @@ pub struct PendingSession {
     pub recipient_device_id: Uuid,
     pub ephemeral_pubkey: String,
     pub ciphertext: String,
-    pub created_at: Option<NaiveDateTime>
+    pub created_at: Option<NaiveDateTime>,
 }
