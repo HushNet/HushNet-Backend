@@ -12,8 +12,9 @@ use crate::repository::device_repository;
 use crate::repository::enrollment_token_repository::add_used_token;
 use crate::repository::enrollment_token_repository::enrollment_token_exists;
 use crate::services::auth::verify_enrollment_token;
+use crate::utils::crypto_utils::verify_signed_prekey_signature;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct CreateDeviceBody {
     pub user_id: Uuid,
     pub identity_pubkey: String,
@@ -47,6 +48,8 @@ pub async fn create_device(
     State(state): State<AppState>,
     Json(payload): Json<CreateDeviceBody>,
 ) -> impl IntoResponse {
+    println!("{:?}", payload);
+
     match enrollment_token_exists(&state.pool, &payload.enrollment_token).await {
         Ok(true) => {
             return (
@@ -70,7 +73,16 @@ pub async fn create_device(
         }
     }
     let user: Option<Uuid> = verify_enrollment_token(&payload.enrollment_token, &state.jwt_secret);
+    // Check if the signature for the keys are valid
 
+    if let Err(error) = verify_signed_prekey_signature(&payload.identity_pubkey, &payload.signed_prekey.key, &payload.signed_prekey.signature) {
+        eprintln!("Signature check failed : {}", error);
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(json!({"error": "Signature check failed."})),
+        ).into_response()
+
+    }
     if let Some(id) = user {
         if id != payload.user_id {
             return (

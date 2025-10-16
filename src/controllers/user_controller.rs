@@ -36,6 +36,7 @@ pub async fn create_user(
                 .into_response()
         }
         Err(e) => {
+            print!("Error creating user: {:?}", e);
             if let sqlx::Error::Database(db_err) = &e {
                 if db_err.code().as_deref() == Some("23505") {
                     return (

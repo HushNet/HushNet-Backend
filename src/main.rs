@@ -8,6 +8,7 @@ use axum::Router;
 use sqlx::PgPool;
 use std::net::SocketAddr;
 mod app_state;
+mod utils;
 
 use std::env;
 
