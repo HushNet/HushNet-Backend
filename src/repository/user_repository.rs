@@ -23,3 +23,23 @@ pub async fn create_user(pool: &PgPool, username: &str) -> Result<User> {
 
     Ok(user)
 }
+
+pub async fn find_user_by_pubkey(pool: &PgPool, pubkey_b64: &str) -> Result<Option<User>> {
+    let user = sqlx::query_as!(
+        User,
+        r#"
+        SELECT 
+            u.id, 
+            u.username, 
+            u.created_at
+        FROM users u
+        JOIN devices d ON d.user_id = u.id
+        WHERE d.identity_pubkey = $1
+        "#,
+        pubkey_b64
+    )
+    .fetch_optional(pool)
+    .await?;
+
+    Ok(user)
+}

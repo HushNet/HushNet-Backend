@@ -8,4 +8,5 @@ pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/users", get(user_controller::list_users))
         .route("/users/create", post(user_controller::create_user))
+        .route("/users/login", post(user_controller::login_user))
 }

@@ -1,5 +1,5 @@
 use base64::{engine::general_purpose, Engine as _};
-use ed25519_dalek::{Verifier, VerifyingKey, Signature};
+use ed25519_dalek::{Signature, Verifier, VerifyingKey};
 
 pub fn verify_signed_prekey_signature(
     identity_pubkey_b64: &str,
@@ -17,7 +17,7 @@ pub fn verify_signed_prekey_signature(
         .decode(spk_sig_b64)
         .map_err(|_| "Invalid Base64 in signed_prekey.signature")?;
 
-let ik_pub =
+    let ik_pub =
         VerifyingKey::try_from(&identity_bytes[..]).map_err(|_| "Invalid identity_pubkey bytes")?;
 
     // Signature Ed25519
@@ -29,5 +29,30 @@ let ik_pub =
         .verify(&spk_pubkey, &signature)
         .map_err(|_| "Invalid signed_prekey signature")?;
 
+    Ok(())
+}
+
+pub fn verify_message_signature(
+    pubkey_b64: &str,
+    message_b64: &str,
+    signature_b64: &str,
+) -> Result<(), String> {
+    let identity_bytes = general_purpose::STANDARD
+        .decode(pubkey_b64)
+        .map_err(|_| "Invalid Base64 in pubkey")?;
+    let message = general_purpose::STANDARD
+        .decode(message_b64)
+        .map_err(|_| "Invalid Base64 in message")?;
+    let signature_dec = general_purpose::STANDARD
+        .decode(signature_b64)
+        .map_err(|_| "Invalid Base64 in signature")?;
+    let signature = Signature::try_from(&signature_dec[..])
+        .map_err(|_| "Invalid signed_prekey.signature bytes")?;
+
+    let pubkey =
+        VerifyingKey::try_from(&identity_bytes[..]).map_err(|_| "Invalid identity_pubkey bytes")?;
+    if pubkey.verify(&message, &signature).is_err() {
+        return Err("Invalid signature".into());
+    }
     Ok(())
 }

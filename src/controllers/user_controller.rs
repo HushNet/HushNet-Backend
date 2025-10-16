@@ -2,16 +2,23 @@ use crate::app_state::AppState;
 use crate::models::user::User;
 use crate::repository::user_repository;
 use crate::services::auth::generate_enrollment_tokens;
+use crate::utils::crypto_utils::verify_message_signature;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::{extract::State, Json};
 use serde::Deserialize;
 use serde_json::json;
-use sqlx::PgPool;
 
 #[derive(Deserialize)]
 pub struct CreateUserBody {
     pub username: String,
+}
+
+#[derive(Deserialize)]
+pub struct LoginUserBody {
+    pub identity_pubkey: String,
+    pub message: String,
+    pub signature: String,
 }
 
 pub async fn list_users(State(state): State<AppState>) -> Json<Vec<User>> {
@@ -53,6 +60,38 @@ pub async fn create_user(
                 Json(json!({ "error": "Error creating user" })),
             )
                 .into_response()
+        }
+    }
+}
+
+pub async fn login_user(
+    State(state): State<AppState>,
+    Json(payload): Json<LoginUserBody>,
+) -> impl IntoResponse {
+
+    if let Err(e) = verify_message_signature(
+        &payload.identity_pubkey,
+        &payload.message,
+        &payload.signature,
+    ) {
+        eprintln!("Signature error: {}", e);
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(json!({ "error": "Invalid signature" })),
+        )
+            .into_response();
+    }
+    match user_repository::find_user_by_pubkey(&state.pool, &payload.identity_pubkey).await {
+        Ok(user) => {
+            return (StatusCode::OK, Json(json!(user))).into_response();
+        }
+        Err(e) => {
+            eprintln!("error : {}", e);
+            return (
+                StatusCode::UNAUTHORIZED,
+                Json(json!({"error": "Unauthorized"})),
+            )
+                .into_response();
         }
     }
 }
