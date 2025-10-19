@@ -8,6 +8,7 @@ pub async fn create_device(
     pool: &PgPool,
     user_id: &Uuid,
     identity_pubkey: &str,
+    prekey_pubkey: &str,
     signed_prekey_pub: &str,
     signed_prekey_sig: &str,
     one_time_prekeys: &serde_json::Value,
@@ -17,12 +18,13 @@ pub async fn create_device(
     let device = sqlx::query_as!(
         Devices,
         r#"
-        INSERT INTO devices (user_id, identity_pubkey, signed_prekey_pub, signed_prekey_sig, one_time_prekeys, device_label, push_token)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        RETURNING id, user_id, identity_pubkey, signed_prekey_pub, signed_prekey_sig, one_time_prekeys, device_label, push_token, last_seen, created_at
+        INSERT INTO devices (user_id, identity_pubkey, prekey_pubkey, signed_prekey_pub, signed_prekey_sig, one_time_prekeys, device_label, push_token)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        RETURNING id, user_id, identity_pubkey, prekey_pubkey, signed_prekey_pub, signed_prekey_sig, one_time_prekeys, device_label, push_token, last_seen, created_at
         "#,
         user_id,
         identity_pubkey,
+        prekey_pubkey,
         signed_prekey_pub,
         signed_prekey_sig,
         one_time_prekeys,
@@ -46,6 +48,7 @@ pub async fn get_devices_by_user_id(
             id,
             user_id,
             identity_pubkey,
+            prekey_pubkey,
             signed_prekey_pub,
             signed_prekey_sig,
             one_time_prekeys,
@@ -76,6 +79,7 @@ pub async fn get_device_by_identity_key(
             id,
             user_id,
             identity_pubkey,
+            prekey_pubkey,
             signed_prekey_pub,
             signed_prekey_sig,
             one_time_prekeys,
@@ -102,7 +106,7 @@ pub async fn get_device_bundle(
 ) -> Result<Vec<DeviceBundle>, sqlx::Error> {
     let rows = sqlx::query!(
         r#"
-        SELECT id, identity_pubkey, signed_prekey_pub, signed_prekey_sig, one_time_prekeys
+        SELECT id, identity_pubkey, prekey_pubkey, signed_prekey_pub, signed_prekey_sig, one_time_prekeys
         FROM devices
         WHERE user_id = $1
         "#,

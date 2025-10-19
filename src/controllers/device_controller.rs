@@ -18,6 +18,7 @@ use crate::utils::crypto_utils::verify_signed_prekey_signature;
 pub struct CreateDeviceBody {
     pub user_id: Uuid,
     pub identity_pubkey: String,
+    pub prekey_pubkey: String,
     pub signed_prekey: SignedPreKey,
     pub one_time_prekeys: Vec<OneTimePrekeys>,
     pub device_label: String,
@@ -103,6 +104,7 @@ pub async fn create_device(
         &state.pool,
         &payload.user_id,
         &payload.identity_pubkey,
+        &payload.prekey_pubkey,
         &payload.signed_prekey.key,
         &payload.signed_prekey.signature,
         &prekeys_json,

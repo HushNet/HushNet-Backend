@@ -8,6 +8,7 @@ pub struct Devices {
     pub id: Uuid,
     pub user_id: Uuid,
     pub identity_pubkey: String,
+    pub prekey_pubkey: String,
     pub signed_prekey_pub: String,
     pub signed_prekey_sig: String,
     pub one_time_prekeys: Value,
