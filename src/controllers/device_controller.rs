@@ -141,3 +141,16 @@ pub async fn create_device(
         }
     }
 }
+
+pub async fn get_user_keys(
+    State(state): State<AppState>,
+    Path(user_id): Path<Uuid>,
+) -> impl IntoResponse {
+    match device_repository::get_device_bundle(&state.pool, &user_id).await {
+        Ok(bundle) => (StatusCode::OK, Json(bundle)).into_response(),
+        Err(_) => (
+            StatusCode::NOT_FOUND,
+            Json(json!({ "error": "User not found or has no active devices" })),
+        ).into_response(),
+    }
+}

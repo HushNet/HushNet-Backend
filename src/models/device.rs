@@ -27,3 +27,12 @@ pub struct SignedPreKey {
 pub struct OneTimePrekeys {
     pub key: String,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DeviceBundle {
+    pub device_id: Uuid,
+    pub identity_pubkey: String,
+    pub signed_prekey_pub: String,
+    pub signed_prekey_sig: String,
+    pub one_time_prekeys: Vec<String>,
+}

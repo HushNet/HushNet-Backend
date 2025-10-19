@@ -1,4 +1,6 @@
-use crate::models::device::Devices;
+use std::borrow::Cow;
+
+use crate::models::device::{DeviceBundle, Devices};
 use sqlx::{PgPool, Result};
 use uuid::Uuid;
 
@@ -91,4 +93,41 @@ pub async fn get_device_by_identity_key(
     .await?;
 
     Ok(devices)
+}
+
+
+pub async fn get_device_bundle(
+    pool: &PgPool,
+    user_id: &Uuid,
+) -> Result<Vec<DeviceBundle>, sqlx::Error> {
+    let rows = sqlx::query!(
+        r#"
+        SELECT id, identity_pubkey, signed_prekey_pub, signed_prekey_sig, one_time_prekeys
+        FROM devices
+        WHERE user_id = $1
+        "#,
+        user_id
+    )
+    .fetch_all(pool)
+    .await?;
+
+    let mut bundles = Vec::new();
+    for row in rows {
+        let otpks: Vec<String> = serde_json::from_value(row.one_time_prekeys).map_err(|e| {
+            sqlx::Error::ColumnDecode {
+                index: Cow::from("one_time_prekeys").to_string(),
+                source: Box::new(e), // serde_json::Error impl Error + Send + Sync
+            }
+        })?;
+
+        bundles.push(DeviceBundle {
+            device_id: row.id,
+            identity_pubkey: row.identity_pubkey,
+            signed_prekey_pub: row.signed_prekey_pub,
+            signed_prekey_sig: row.signed_prekey_sig,
+            one_time_prekeys: otpks,
+        });
+    }
+
+    Ok(bundles)
 }

@@ -12,4 +12,8 @@ pub fn routes() -> Router<AppState> {
             "/users/:id/devices",
             get(device_controller::get_devices_for_user),
         )
+        .route(
+            "/users/:id/keys",
+            get(device_controller::get_user_keys),
+        )
 }
