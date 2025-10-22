@@ -20,13 +20,6 @@ pub struct Session {
     pub chat_id: Option<Uuid>,
     pub sender_device_id: Uuid,
     pub receiver_device_id: Uuid,
-    pub root_key: Vec<u8>,
-    pub send_chain_key: Option<Vec<u8>>,
-    pub recv_chain_key: Option<Vec<u8>>,
-    pub send_counter: i32,
-    pub recv_counter: i32,
-    pub ratchet_pub: Option<Vec<u8>>,
-    pub last_remote_pub: Option<Vec<u8>>,
     pub created_at: Option<NaiveDateTime>,
     pub updated_at: Option<NaiveDateTime>,
 }

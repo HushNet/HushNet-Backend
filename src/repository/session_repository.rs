@@ -106,11 +106,11 @@ pub async fn get_or_create_chat_id(
     if let Some(chat_id) = sqlx::query_scalar!(
         r#"
         SELECT id FROM chats
-        WHERE (user_a_id = LEAST(
+        WHERE (user_a= LEAST(
                     (SELECT user_id FROM devices WHERE id=$1),
                     (SELECT user_id FROM devices WHERE id=$2)
                )
-           AND user_b_id = GREATEST(
+           AND user_b = GREATEST(
                     (SELECT user_id FROM devices WHERE id=$1),
                     (SELECT user_id FROM devices WHERE id=$2)
                ))
@@ -126,7 +126,7 @@ pub async fn get_or_create_chat_id(
     // sinon crée-le proprement en respectant la contrainte
     let new_chat_id = sqlx::query_scalar!(
         r#"
-        INSERT INTO chats (user_a_id, user_b_id)
+        INSERT INTO chats (user_a, user_b)
         VALUES (
             LEAST(
               (SELECT user_id FROM devices WHERE id=$1),
@@ -153,30 +153,20 @@ pub async fn insert_or_update_session(
     chat_id: &Uuid,
     sender_device_id: &Uuid,
     receiver_device_id: &Uuid,
-    root_key: &[u8],
-    ratchet_pub: &[u8],
-    last_remote_pub: &[u8],
 ) -> Result<(), sqlx::Error> {
     sqlx::query!(
         r#"
         INSERT INTO sessions (
-          chat_id, sender_device_id, receiver_device_id,
-          root_key, ratchet_pub, last_remote_pub
+          chat_id, sender_device_id, receiver_device_id
         )
-        VALUES ($1, $2, $3, $4, $5, $6)
+        VALUES ($1, $2, $3)
         ON CONFLICT (sender_device_id, receiver_device_id)
         DO UPDATE SET
-          root_key = EXCLUDED.root_key,
-          ratchet_pub = EXCLUDED.ratchet_pub,
-          last_remote_pub = EXCLUDED.last_remote_pub,
           updated_at = NOW()
         "#,
         chat_id,
         sender_device_id,
         receiver_device_id,
-        root_key,
-        ratchet_pub,
-        last_remote_pub
     )
     .execute(pool)
     .await?;

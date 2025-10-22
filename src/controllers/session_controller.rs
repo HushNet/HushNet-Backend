@@ -30,9 +30,6 @@ pub struct ConfirmSessionBody {
     pub pending_session_id: Uuid,
     pub sender_device_id: Uuid,
     pub receiver_device_id: Uuid,
-    pub root_key: String,
-    pub ratchet_pub: String,
-    pub last_remote_pub: String,
 }
 
 
@@ -96,7 +93,6 @@ pub async fn confirm_session(
     AuthenticatedDevice(device): AuthenticatedDevice,
     Json(payload): Json<ConfirmSessionBody>,
 ) -> Result<impl IntoResponse, (StatusCode, &'static str)> {
-    // 1️⃣ Vérifie que la pending session existe et appartient au device courant
     let pending_session = session_repository::get_pending_session_by_id(
         &state.pool,
         &payload.pending_session_id,
@@ -109,19 +105,6 @@ pub async fn confirm_session(
         Some(ps) => ps,
         None => return Err((StatusCode::NOT_FOUND, "Pending session not found or not owned by device")),
     };
-
-    // 2️⃣ Decode les clés Base64 -> bytes
-    let root_key_bytes = general_purpose::STANDARD
-        .decode(&payload.root_key)
-        .map_err(|_| (StatusCode::BAD_REQUEST, "Invalid root_key"))?;
-
-    let ratchet_pub_bytes = general_purpose::STANDARD
-        .decode(&payload.ratchet_pub)
-        .map_err(|_| (StatusCode::BAD_REQUEST, "Invalid ratchet_pub"))?;
-
-    let last_remote_pub_bytes = general_purpose::STANDARD
-        .decode(&payload.last_remote_pub)
-        .map_err(|_| (StatusCode::BAD_REQUEST, "Invalid last_remote_pub"))?;
 
     // 3️⃣ Récupère ou crée le chat_id
     let chat_id = session_repository::get_or_create_chat_id(
@@ -141,10 +124,7 @@ pub async fn confirm_session(
         &state.pool,
         &chat_id,
         &payload.sender_device_id,
-        &payload.receiver_device_id,
-        &root_key_bytes,
-        &ratchet_pub_bytes,
-        &last_remote_pub_bytes,
+        &payload.receiver_device_id
     )
     .await
     .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Failed to insert session"))?;
