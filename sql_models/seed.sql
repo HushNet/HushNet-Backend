@@ -33,7 +33,7 @@ CREATE TABLE devices (
 -- =========================
 CREATE TABLE chats (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  type TEXT CHECK (type IN ('direct','group')) DEFAULT 'direct',
+  chat_type TEXT CHECK (chat_type IN ('direct','group')) DEFAULT 'direct',
 
   -- Direct chat participants
   user_a UUID REFERENCES users(id) ON DELETE CASCADE,
@@ -52,7 +52,7 @@ CREATE TABLE chats (
   -- For direct chats: both users must be set, and enforce strict ordering
   CONSTRAINT chats_direct_shape
     CHECK (
-      type <> 'direct'
+      chat_type <> 'direct'
       OR (user_a IS NOT NULL AND user_b IS NOT NULL AND user_a < user_b)
     )
 );
@@ -60,7 +60,7 @@ CREATE TABLE chats (
 -- Prevent duplicates (A,B) vs (B,A)
 CREATE UNIQUE INDEX uniq_direct_chat
   ON chats (LEAST(user_a, user_b), GREATEST(user_a, user_b))
-  WHERE type = 'direct';
+  WHERE chat_type = 'direct';
 
 -- =========================
 -- Chat Members (for group chats)
@@ -140,7 +140,7 @@ CREATE TABLE pending_sessions (
   recipient_device_id UUID NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
   ephemeral_pubkey TEXT NOT NULL,     -- Ephemeral key (EK_A pub)
   sender_prekey_pub TEXT NOT NULL,    -- IK/SPK_A used by sender
-  otpk_used TEXT NOT NULL,    -- Whether a one-time prekey was consumed
+  otpk_used TEXT NOT NULL,            -- Whether a one-time prekey was consumed
   ciphertext TEXT NOT NULL,           -- Encrypted payload (init message)
   created_at TIMESTAMP DEFAULT NOW(),
   state TEXT DEFAULT 'initiated' CHECK (state IN ('initiated','responded','completed'))
