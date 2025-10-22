@@ -93,9 +93,9 @@ CREATE TABLE messages (
   header JSONB NOT NULL,       -- Double Ratchet header (DH pubkey, counters, etc.)
   ciphertext TEXT NOT NULL,    -- base64(nonce || cipher || mac)
 
-  delivered_at TIMESTAMP,
-  read_at TIMESTAMP,
-  created_at TIMESTAMP DEFAULT NOW()
+  delivered_at TIMESTAMPTZ,
+  read_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Add FK once messages table exists
@@ -161,3 +161,23 @@ SELECT
   (d.one_time_prekeys ->> 0) AS one_time_prekey_pub
 FROM users u
 JOIN devices d ON u.id = d.user_id;
+
+
+ALTER TABLE messages
+ALTER COLUMN created_at TYPE timestamptz
+USING created_at AT TIME ZONE 'Europe/Paris';
+
+ALTER TABLE messages
+ALTER COLUMN delivered_at TYPE timestamptz
+USING delivered_at AT TIME ZONE 'Europe/Paris';
+
+ALTER TABLE messages
+ALTER COLUMN read_at TYPE timestamptz
+USING read_at AT TIME ZONE 'Europe/Paris';
+
+ALTER TABLE messages
+ALTER COLUMN created_at SET DEFAULT (NOW() AT TIME ZONE 'UTC');
+ALTER TABLE messages
+ALTER COLUMN delivered_at SET DEFAULT NULL;
+ALTER TABLE messages
+ALTER COLUMN read_at SET DEFAULT NULL;

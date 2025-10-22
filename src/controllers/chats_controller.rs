@@ -20,3 +20,11 @@ AuthenticatedDevice(sender): AuthenticatedDevice,
         }
     }
 }
+
+
+pub async fn get_devices_id_for_chat(
+    State(state): State<AppState>,
+AuthenticatedDevice(sender): AuthenticatedDevice,
+) -> impl IntoResponse {
+
+}
