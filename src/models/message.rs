@@ -48,5 +48,5 @@ pub struct MessageView {
     pub from_device_id: Option<Uuid>,
     pub header: Value,
     pub ciphertext: String,
-    pub created_at: Option<NaiveDateTime>,
+    pub created_at: Option<chrono::DateTime<chrono::Utc>>,
 }
