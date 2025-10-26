@@ -4,7 +4,7 @@ mod models;
 mod repository;
 mod routes;
 mod services;
-use axum::Router;
+use axum::{Extension, Router};
 use sqlx::PgPool;
 use tokio::sync::broadcast;
 use std::net::SocketAddr;
@@ -30,14 +30,16 @@ async fn main() -> Result<(), anyhow::Error> {
     tokio::spawn(start_pg_listeners(pool.clone(), tx.clone()));
 
 
-    let app: Router = Router::new()
-        .merge(routes::users::routes())
-        .merge(routes::devices::routes())
-        .merge(routes::root::routes())
-        .merge(routes::sessions::routes())
-        .merge(routes::chats::routes())
-        .merge(routes::messages::routes())
-        .with_state(state);
+    let app = Router::new()
+        .merge(routes::users::routes().with_state(state.clone()))
+        .merge(routes::devices::routes().with_state(state.clone()))
+        .merge(routes::root::routes().with_state(state.clone()))
+        .merge(routes::sessions::routes().with_state(state.clone()))
+        .merge(routes::chats::routes().with_state(state.clone()))
+        .merge(routes::messages::routes().with_state(state.clone()))
+        .merge(routes::websocket::routes()) 
+        .layer(Extension(tx));
+
     let addr = SocketAddr::from(([127, 0, 0, 1], 8080));
 
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
