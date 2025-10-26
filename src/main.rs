@@ -6,13 +6,17 @@ mod routes;
 mod services;
 use axum::Router;
 use sqlx::PgPool;
+use tokio::sync::broadcast;
 use std::net::SocketAddr;
 mod app_state;
 mod utils;
+mod realtime;
 
 use std::env;
 
 use crate::app_state::AppState;
+use crate::models::realtime::RealtimeEvent;
+use crate::realtime::listener::start_pg_listeners;
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
     tracing_subscriber::fmt::init();
@@ -21,7 +25,10 @@ async fn main() -> Result<(), anyhow::Error> {
     let pool: sqlx::Pool<sqlx::Postgres> = PgPool::connect(&database_url).await?;
     let jwt_secret = std::env::var("JWT_SECRET").unwrap();
 
-    let state: AppState = AppState { pool, jwt_secret };
+    let state: AppState = AppState { pool: pool.clone(), jwt_secret };
+    let (tx, _rx) = broadcast::channel::<RealtimeEvent>(100);
+    tokio::spawn(start_pg_listeners(pool.clone(), tx.clone()));
+
 
     let app: Router = Router::new()
         .merge(routes::users::routes())

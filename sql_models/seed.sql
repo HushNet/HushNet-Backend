@@ -181,3 +181,57 @@ ALTER TABLE messages
 ALTER COLUMN delivered_at SET DEFAULT NULL;
 ALTER TABLE messages
 ALTER COLUMN read_at SET DEFAULT NULL;
+
+-- ================
+-- Messages channel
+-- ================
+CREATE OR REPLACE FUNCTION notify_new_message() RETURNS trigger AS $$
+BEGIN
+  PERFORM pg_notify(
+    'messages_channel',
+    json_build_object('type', 'message', 'chat_id', NEW.chat_id)::text
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER messages_notify_trigger
+AFTER INSERT ON messages
+FOR EACH ROW
+EXECUTE FUNCTION notify_new_message();
+
+-- ================
+-- Sessions channel
+-- ================
+CREATE OR REPLACE FUNCTION notify_new_session() RETURNS trigger AS $$
+BEGIN
+  PERFORM pg_notify(
+    'sessions_channel',
+    json_build_object('type', 'session', 'user_id', NEW.user_id)::text
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER sessions_notify_trigger
+AFTER INSERT ON sessions
+FOR EACH ROW
+EXECUTE FUNCTION notify_new_session();
+
+-- ================
+-- Devices channel
+-- ================
+CREATE OR REPLACE FUNCTION notify_device_update() RETURNS trigger AS $$
+BEGIN
+  PERFORM pg_notify(
+    'devices_channel',
+    json_build_object('type', 'device', 'user_id', NEW.user_id)::text
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER devices_notify_trigger
+AFTER UPDATE OR INSERT ON devices
+FOR EACH ROW
+EXECUTE FUNCTION notify_device_update();
