@@ -189,12 +189,17 @@ CREATE OR REPLACE FUNCTION notify_new_message() RETURNS trigger AS $$
 BEGIN
   PERFORM pg_notify(
     'messages_channel',
-    json_build_object('type', 'message', 'chat_id', NEW.chat_id)::text
+    json_build_object(
+      'type', 'message',
+      'chat_id', NEW.chat_id,
+      'user_id', NEW.to_user_id
+    )::text
   );
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS messages_notify_trigger ON messages;
 CREATE TRIGGER messages_notify_trigger
 AFTER INSERT ON messages
 FOR EACH ROW
@@ -204,11 +209,40 @@ EXECUTE FUNCTION notify_new_message();
 -- Sessions channel
 -- ================
 CREATE OR REPLACE FUNCTION notify_new_session() RETURNS trigger AS $$
+DECLARE
+  sender_user UUID;
+  receiver_user UUID;
 BEGIN
-  PERFORM pg_notify(
-    'sessions_channel',
-    json_build_object('type', 'session', 'user_id', NEW.user_id)::text
-  );
+  -- Retrieve user IDs for sender and receiver devices
+  SELECT user_id INTO sender_user FROM devices WHERE id = NEW.sender_device_id;
+  SELECT user_id INTO receiver_user FROM devices WHERE id = NEW.receiver_device_id;
+
+  -- Notify receiver
+  IF receiver_user IS NOT NULL THEN
+    PERFORM pg_notify(
+      'sessions_channel',
+      json_build_object(
+        'type', 'session',
+        'user_id', receiver_user,
+        'sender_device_id', NEW.sender_device_id,
+        'receiver_device_id', NEW.receiver_device_id
+      )::text
+    );
+  END IF;
+
+  -- Notify sender
+  IF sender_user IS NOT NULL THEN
+    PERFORM pg_notify(
+      'sessions_channel',
+      json_build_object(
+        'type', 'session',
+        'user_id', sender_user,
+        'sender_device_id', NEW.sender_device_id,
+        'receiver_device_id', NEW.receiver_device_id
+      )::text
+    );
+  END IF;
+
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

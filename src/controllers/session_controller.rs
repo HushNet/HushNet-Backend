@@ -106,7 +106,6 @@ pub async fn confirm_session(
         None => return Err((StatusCode::NOT_FOUND, "Pending session not found or not owned by device")),
     };
 
-    // 3️⃣ Récupère ou crée le chat_id
     let chat_id = session_repository::get_or_create_chat_id(
         &state.pool,
         &payload.sender_device_id,
@@ -119,7 +118,6 @@ pub async fn confirm_session(
     })?;
         
 
-    // 4️⃣ Insert ou update la session active
     session_repository::insert_or_update_session(
         &state.pool,
         &chat_id,
@@ -127,9 +125,10 @@ pub async fn confirm_session(
         &payload.receiver_device_id
     )
     .await
-    .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Failed to insert session"))?;
-
-    // 5️⃣ Supprime la pending session
+    .map_err(|e| {
+        eprintln!("Error {:#?}", e);
+        (StatusCode::INTERNAL_SERVER_ERROR, "Failed to insert session")
+    })?;
     session_repository::delete_pending_session(&state.pool, &payload.pending_session_id)
         .await
         .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Failed to delete pending session"))?;
