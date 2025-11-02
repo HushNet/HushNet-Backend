@@ -12,8 +12,9 @@ pub fn routes() -> Router<AppState> {
             "/users/:id/devices",
             get(device_controller::get_devices_for_user),
         )
+        .route("/users/:id/keys", get(device_controller::get_user_keys))
         .route(
-            "/users/:id/keys",
-            get(device_controller::get_user_keys),
+            "/devices/:id/user",
+            get(device_controller::get_user_for_device),
         )
 }

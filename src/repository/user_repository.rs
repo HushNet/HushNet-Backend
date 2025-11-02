@@ -43,3 +43,22 @@ pub async fn find_user_by_pubkey(pool: &PgPool, pubkey_b64: &str) -> Result<Opti
 
     Ok(user)
 }
+
+pub async fn find_user_by_id(pool: &PgPool, user_id: &uuid::Uuid) -> Result<Option<User>> {
+    let user = sqlx::query_as!(
+        User,
+        r#"
+        SELECT 
+            id, 
+            username, 
+            created_at
+        FROM users
+        WHERE id = $1
+        "#,
+        user_id
+    )
+    .fetch_optional(pool)
+    .await?;
+
+    Ok(user)
+}

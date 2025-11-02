@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use crate::models::device::{DeviceBundle, Devices};
+use crate::models::{device::{DeviceBundle, Devices}, user::User};
 use sqlx::{PgPool, Result};
 use uuid::Uuid;
 
@@ -134,4 +134,37 @@ pub async fn get_device_bundle(
     }
 
     Ok(bundles)
+}
+
+pub async fn get_user_for_device(
+    pool: &PgPool,
+    device_id: &Uuid,
+) -> Result<Option<User>, sqlx::Error> {
+    let row = sqlx::query!(
+        r#"
+        SELECT user_id
+        FROM devices
+        WHERE id = $1
+        "#,
+        device_id
+    )
+    .fetch_one(pool)
+    .await?;
+
+    let user_data = sqlx::query_as!(
+        User,
+        r#"
+        SELECT
+            id,
+            username,
+            created_at
+        FROM users
+        WHERE id = $1
+        "#,
+        row.user_id
+    )
+    .fetch_optional(pool)
+    .await?;
+
+    Ok(user_data)
 }

@@ -3,11 +3,13 @@ use crate::models::user::User;
 use crate::repository::user_repository;
 use crate::services::auth::generate_enrollment_tokens;
 use crate::utils::crypto_utils::verify_message_signature;
+use axum::extract::Path;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::{extract::State, Json};
 use serde::Deserialize;
 use serde_json::json;
+use uuid::Uuid;
 
 #[derive(Deserialize)]
 pub struct CreateUserBody {
@@ -90,6 +92,25 @@ pub async fn login_user(
             return (
                 StatusCode::UNAUTHORIZED,
                 Json(json!({"error": "Unauthorized"})),
+            )
+                .into_response();
+        }
+    }
+}
+
+pub async fn get_user_by_id(
+    State(state): State<AppState>,
+    Path(user_id): Path<Uuid>,
+) -> impl IntoResponse {
+    match user_repository::find_user_by_id(&state.pool, &user_id).await {
+        Ok(data) => return (StatusCode::OK, Json(data)).into_response(),
+        Err(e) => {
+            eprintln!("Error when fetching devices {}", e);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "Internal server error"
+                })),
             )
                 .into_response();
         }

@@ -156,3 +156,16 @@ pub async fn get_user_keys(
         ).into_response(),
     }
 }
+
+pub async fn get_user_for_device(
+    State(state): State<AppState>,
+    Path(device_id): Path<Uuid>,
+) -> impl IntoResponse {
+    match device_repository::get_user_for_device(&state.pool, &device_id).await {
+        Ok(user) => (StatusCode::OK, Json(user)).into_response(),
+        Err(_) => (
+            StatusCode::NOT_FOUND,
+            Json(json!({ "error": "User not found for device" })),
+        ).into_response(),
+    }
+}
