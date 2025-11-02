@@ -1,7 +1,7 @@
+use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use uuid::Uuid;
-use chrono::NaiveDateTime;
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow, Clone)]
 pub struct Message {
@@ -12,13 +12,12 @@ pub struct Message {
     pub from_device_id: Uuid,
     pub to_user_id: Uuid,
     pub to_device_id: Uuid,
-    pub header: Value,            // Double Ratchet header (JSON)
-    pub ciphertext: String,           // base64(nonce || cipher || mac)
+    pub header: Value,      // Double Ratchet header (JSON)
+    pub ciphertext: String, // base64(nonce || cipher || mac)
     pub delivered_at: Option<NaiveDateTime>,
     pub read_at: Option<NaiveDateTime>,
     pub created_at: NaiveDateTime,
 }
-
 
 /// Each encrypted payload is specific to a recipient device.
 #[derive(Debug, Deserialize)]
@@ -36,8 +35,6 @@ pub struct OutgoingMessage {
     pub to_user_id: Uuid,
     pub payloads: Vec<OutgoingMessagePayload>,
 }
-
-
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
 pub struct MessageView {

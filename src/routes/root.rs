@@ -5,6 +5,5 @@ use axum::{
 };
 
 pub fn routes() -> Router<AppState> {
-    Router::new()
-        .route("/", get(root_controller::root))
+    Router::new().route("/", get(root_controller::root))
 }

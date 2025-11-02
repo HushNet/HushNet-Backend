@@ -70,7 +70,6 @@ pub async fn login_user(
     State(state): State<AppState>,
     Json(payload): Json<LoginUserBody>,
 ) -> impl IntoResponse {
-
     if let Err(e) = verify_message_signature(
         &payload.identity_pubkey,
         &payload.message,

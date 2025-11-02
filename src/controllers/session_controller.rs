@@ -32,7 +32,6 @@ pub struct ConfirmSessionBody {
     pub receiver_device_id: Uuid,
 }
 
-
 pub async fn create_session(
     State(state): State<AppState>,
     AuthenticatedDevice(sender): AuthenticatedDevice,
@@ -42,9 +41,12 @@ pub async fn create_session(
         return Err((StatusCode::BAD_REQUEST, "Cannot create session with self"));
     }
 
-    let mut tx = state.pool.begin()
-        .await
-        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Failed to start transaction"))?;
+    let mut tx = state.pool.begin().await.map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to start transaction",
+        )
+    })?;
 
     for init in &payload.sessions_init {
         session_repository::create_pending_session(
@@ -60,7 +62,10 @@ pub async fn create_session(
         .map_err(|e| {
             // Print the underlying database error for debugging before mapping to a generic HTTP error
             eprintln!("Failed to insert pending session: {:#?}", e);
-            (StatusCode::INTERNAL_SERVER_ERROR, "Failed to insert pending session")
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to insert pending session",
+            )
         })?;
     }
 
@@ -75,9 +80,15 @@ pub async fn get_pending_sessions_handler(
     State(state): State<AppState>,
     AuthenticatedDevice(device): AuthenticatedDevice,
 ) -> Result<impl IntoResponse, (StatusCode, &'static str)> {
-    let sessions = session_repository::get_pending_sessions(&state.pool, AuthenticatedDevice(device))
-        .await
-        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Failed to fetch pending sessions"))?;
+    let sessions =
+        session_repository::get_pending_sessions(&state.pool, AuthenticatedDevice(device))
+            .await
+            .map_err(|_| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Failed to fetch pending sessions",
+                )
+            })?;
 
     if sessions.is_empty() {
         return Ok((StatusCode::OK, Json(json!({ "sessions": [] }))));
@@ -85,8 +96,6 @@ pub async fn get_pending_sessions_handler(
 
     Ok((StatusCode::OK, Json(json!({ "sessions": sessions }))))
 }
-
-
 
 pub async fn confirm_session(
     State(state): State<AppState>,
@@ -99,11 +108,16 @@ pub async fn confirm_session(
         &device.id,
     )
     .await
-    .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "DB error"))?;;
+    .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "DB error"))?;
 
     match pending_session {
         Some(ps) => ps,
-        None => return Err((StatusCode::NOT_FOUND, "Pending session not found or not owned by device")),
+        None => {
+            return Err((
+                StatusCode::NOT_FOUND,
+                "Pending session not found or not owned by device",
+            ))
+        }
     };
 
     let chat_id = session_repository::get_or_create_chat_id(
@@ -114,24 +128,37 @@ pub async fn confirm_session(
     .await
     .map_err(|e| {
         eprintln!("Error {:#?}", e);
-        (StatusCode::INTERNAL_SERVER_ERROR, "Failed to get or create chat")
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to get or create chat",
+        )
     })?;
-        
 
     session_repository::insert_or_update_session(
         &state.pool,
         &chat_id,
         &payload.sender_device_id,
-        &payload.receiver_device_id
+        &payload.receiver_device_id,
     )
     .await
     .map_err(|e| {
         eprintln!("Error {:#?}", e);
-        (StatusCode::INTERNAL_SERVER_ERROR, "Failed to insert session")
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to insert session",
+        )
     })?;
     session_repository::delete_pending_session(&state.pool, &payload.pending_session_id)
         .await
-        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Failed to delete pending session"))?;
+        .map_err(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to delete pending session",
+            )
+        })?;
 
-    Ok((StatusCode::CREATED, Json(json!({ "status": "session confirmed" }))))
+    Ok((
+        StatusCode::CREATED,
+        Json(json!({ "status": "session confirmed" })),
+    ))
 }

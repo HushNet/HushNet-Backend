@@ -1,8 +1,11 @@
+use crate::{
+    middlewares::auth::AuthenticatedDevice,
+    models::message::{Message, MessageView, OutgoingMessage},
+};
 use axum::{extract::State, Json};
-use sqlx::PgPool;
-use crate::{middlewares::auth::AuthenticatedDevice, models::message::{Message, MessageView, OutgoingMessage}};
-use uuid::Uuid;
 use serde_json::Value;
+use sqlx::PgPool;
+use uuid::Uuid;
 pub async fn insert_message(
     pool: &PgPool,
     from_device_id: Uuid,

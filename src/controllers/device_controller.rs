@@ -76,13 +76,17 @@ pub async fn create_device(
     let user: Option<Uuid> = verify_enrollment_token(&payload.enrollment_token, &state.jwt_secret);
     // Check if the signature for the keys are valid
 
-    if let Err(error) = verify_signed_prekey_signature(&payload.identity_pubkey, &payload.signed_prekey.key, &payload.signed_prekey.signature) {
+    if let Err(error) = verify_signed_prekey_signature(
+        &payload.identity_pubkey,
+        &payload.signed_prekey.key,
+        &payload.signed_prekey.signature,
+    ) {
         eprintln!("Signature check failed : {}", error);
         return (
             StatusCode::UNAUTHORIZED,
             Json(json!({"error": "Signature check failed."})),
-        ).into_response()
-
+        )
+            .into_response();
     }
     if let Some(id) = user {
         if id != payload.user_id {
@@ -153,7 +157,8 @@ pub async fn get_user_keys(
         Err(_) => (
             StatusCode::NOT_FOUND,
             Json(json!({ "error": "User not found or has no active devices" })),
-        ).into_response(),
+        )
+            .into_response(),
     }
 }
 
@@ -166,6 +171,7 @@ pub async fn get_user_for_device(
         Err(_) => (
             StatusCode::NOT_FOUND,
             Json(json!({ "error": "User not found for device" })),
-        ).into_response(),
+        )
+            .into_response(),
     }
 }

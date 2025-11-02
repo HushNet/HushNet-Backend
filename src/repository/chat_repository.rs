@@ -1,19 +1,17 @@
 use sqlx::{PgPool, Result};
 use uuid::Uuid;
 
-use crate::{middlewares::auth::AuthenticatedDevice, models::{chat::ChatView}};
+use crate::{middlewares::auth::AuthenticatedDevice, models::chat::ChatView};
 
 pub async fn get_chats_for_device(
     pool: &PgPool,
-    AuthenticatedDevice(device): AuthenticatedDevice
+    AuthenticatedDevice(device): AuthenticatedDevice,
 ) -> Result<Vec<ChatView>, sqlx::Error> {
     // Get current user_id from the device
-    let user_id: Option<Uuid> = sqlx::query_scalar!(
-        r#"SELECT user_id FROM devices WHERE id = $1"#,
-        device.id
-    )
-    .fetch_optional(pool)
-    .await?;
+    let user_id: Option<Uuid> =
+        sqlx::query_scalar!(r#"SELECT user_id FROM devices WHERE id = $1"#, device.id)
+            .fetch_optional(pool)
+            .await?;
 
     let user_id = match user_id {
         Some(id) => id,
@@ -57,4 +55,3 @@ pub async fn get_chats_for_device(
 
     Ok(chats)
 }
-

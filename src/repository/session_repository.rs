@@ -39,7 +39,6 @@ pub async fn create_pending_session(
     Ok(())
 }
 
-
 pub async fn get_pending_sessions(
     pool: &PgPool,
     AuthenticatedDevice(device): AuthenticatedDevice,
@@ -66,7 +65,6 @@ pub async fn get_pending_sessions(
 
     Ok(sessions)
 }
-
 
 pub async fn get_pending_session_by_id(
     pool: &PgPool,
@@ -119,7 +117,8 @@ pub async fn get_or_create_chat_id(
         receiver_device_id
     )
     .fetch_optional(pool)
-    .await? {
+    .await?
+    {
         return Ok(chat_id);
     }
 
@@ -174,16 +173,10 @@ pub async fn insert_or_update_session(
     Ok(())
 }
 
-pub async fn delete_pending_session(
-    pool: &PgPool,
-    pending_id: &Uuid,
-) -> Result<(), sqlx::Error> {
-    sqlx::query!(
-        "DELETE FROM pending_sessions WHERE id = $1",
-        pending_id
-    )
-    .execute(pool)
-    .await?;
+pub async fn delete_pending_session(pool: &PgPool, pending_id: &Uuid) -> Result<(), sqlx::Error> {
+    sqlx::query!("DELETE FROM pending_sessions WHERE id = $1", pending_id)
+        .execute(pool)
+        .await?;
 
     Ok(())
 }

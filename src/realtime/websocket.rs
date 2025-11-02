@@ -1,6 +1,11 @@
-
 use axum::{
-    extract::{ws::{Message, WebSocket}, Path, WebSocketUpgrade}, response::{IntoResponse, Response}, routing::any, Extension, Router
+    extract::{
+        ws::{Message, WebSocket},
+        Path, WebSocketUpgrade,
+    },
+    response::{IntoResponse, Response},
+    routing::any,
+    Extension, Router,
 };
 
 use tokio::sync::broadcast;
@@ -14,7 +19,11 @@ pub async fn ws_route(
     ws.on_upgrade(|socket| handle_socket(socket, tx, user_id))
 }
 
-async fn handle_socket(mut socket: WebSocket, tx: broadcast::Sender<RealtimeEvent>, user_id: String) {
+async fn handle_socket(
+    mut socket: WebSocket,
+    tx: broadcast::Sender<RealtimeEvent>,
+    user_id: String,
+) {
     let mut rx = tx.subscribe();
 
     println!("WS connected for user {}", user_id);

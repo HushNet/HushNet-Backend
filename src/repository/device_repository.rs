@@ -1,6 +1,9 @@
 use std::borrow::Cow;
 
-use crate::models::{device::{DeviceBundle, Devices}, user::User};
+use crate::models::{
+    device::{DeviceBundle, Devices},
+    user::User,
+};
 use sqlx::{PgPool, Result};
 use uuid::Uuid;
 
@@ -98,7 +101,6 @@ pub async fn get_device_by_identity_key(
 
     Ok(devices)
 }
-
 
 pub async fn get_device_bundle(
     pool: &PgPool,
