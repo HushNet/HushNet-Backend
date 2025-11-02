@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE messages SET delivered_at = NOW() WHERE to_device_id = $1 AND delivered_at IS NULL",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "9e77b08a76c96aaf6f252f8ea12771d630f07f49ac184a12a3ff28f4dabe1039"
+}

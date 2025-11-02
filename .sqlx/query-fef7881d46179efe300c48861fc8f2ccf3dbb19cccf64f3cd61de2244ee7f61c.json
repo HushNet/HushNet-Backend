@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO messages (\n                logical_msg_id,\n                chat_id,\n                from_user_id,\n                from_device_id,\n                to_user_id,\n                to_device_id,\n                header,\n                ciphertext\n            )\n            VALUES ($1,$2,$3,$4,$5,$6,$7,$8)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Jsonb",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "fef7881d46179efe300c48861fc8f2ccf3dbb19cccf64f3cd61de2244ee7f61c"
+}

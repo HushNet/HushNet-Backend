@@ -1,0 +1,65 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT \n            id,\n            sender_device_id,\n            ephemeral_pubkey,\n            ciphertext,\n            recipient_device_id,\n            sender_prekey_pub,\n            otpk_used,\n            created_at\n        FROM pending_sessions\n        WHERE id = $1 AND recipient_device_id = $2\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "sender_device_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "ephemeral_pubkey",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "ciphertext",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "recipient_device_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 5,
+        "name": "sender_prekey_pub",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "otpk_used",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "created_at",
+        "type_info": "Timestamp"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "dad7214e8a1fe2a23e83ce82fae9e71f1a23300a9e038e3ee8922602b1760168"
+}

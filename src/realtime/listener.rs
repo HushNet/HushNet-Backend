@@ -13,8 +13,6 @@ pub async fn start_pg_listeners(pool: PgPool, tx: broadcast::Sender<RealtimeEven
         "devices_channel",
     ]).await.unwrap();
 
-    println!("👂 Listening to Postgres realtime channels...");
-
     while let Ok(notif) = listener.recv().await {
         if let Ok(payload) = serde_json::from_str::<Value>(notif.payload()) {
             if let Some(event_type) = payload.get("type").and_then(|v| v.as_str()) {

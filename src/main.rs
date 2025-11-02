@@ -22,6 +22,8 @@ async fn main() -> Result<(), anyhow::Error> {
     tracing_subscriber::fmt::init();
     dotenvy::dotenv().ok();
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let server_host = env::var("SERVER_HOST").unwrap_or_else(|_| "0.0.0.0".into());
+    let server_port = env::var("SERVER_PORT").unwrap_or_else(|_| "8080".into());
     let pool: sqlx::Pool<sqlx::Postgres> = PgPool::connect(&database_url).await?;
     let jwt_secret = std::env::var("JWT_SECRET").unwrap();
 
@@ -40,7 +42,7 @@ async fn main() -> Result<(), anyhow::Error> {
         .merge(routes::websocket::routes()) 
         .layer(Extension(tx));
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 8080));
+    let addr = SocketAddr::new(server_host.parse().unwrap(), server_port.parse().unwrap());
 
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     axum::serve(listener, app).await.unwrap();

@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO sessions (\n          chat_id, sender_device_id, receiver_device_id\n        )\n        VALUES ($1, $2, $3)\n        ON CONFLICT (sender_device_id, receiver_device_id)\n        DO UPDATE SET\n          updated_at = NOW()\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "230df602f1447eb8582c604b002bffbee53753086534eb8ce1c41a7fcf3b68d3"
+}

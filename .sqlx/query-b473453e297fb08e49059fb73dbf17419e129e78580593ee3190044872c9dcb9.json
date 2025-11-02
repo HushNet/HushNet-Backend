@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO pending_sessions (\n            sender_device_id,\n            recipient_device_id,\n            ephemeral_pubkey,\n            sender_prekey_pub,\n            otpk_used,\n            ciphertext\n        )\n        VALUES ($1, $2, $3, $4, $5, $6)\n        ON CONFLICT DO NOTHING\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b473453e297fb08e49059fb73dbf17419e129e78580593ee3190044872c9dcb9"
+}

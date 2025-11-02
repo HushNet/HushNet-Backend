@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO chats (user_a, user_b)\n        VALUES (\n            LEAST(\n              (SELECT user_id FROM devices WHERE id=$1),\n              (SELECT user_id FROM devices WHERE id=$2)\n            ),\n            GREATEST(\n              (SELECT user_id FROM devices WHERE id=$1),\n              (SELECT user_id FROM devices WHERE id=$2)\n            )\n        )\n        RETURNING id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "97ac2b9fa6882be0a974cc1ea1bb786c833ee78abce1c075a715546ec0cf84fd"
+}

@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO used_tokens (token) VALUES ($1)\n        ON CONFLICT (token) DO NOTHING",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "f933c265b95f55c75c6c7c8391ebbeb413e87527b992c5fac0d228d2c3a2b675"
+}

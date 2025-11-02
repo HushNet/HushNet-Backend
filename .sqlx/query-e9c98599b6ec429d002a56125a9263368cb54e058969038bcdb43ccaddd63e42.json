@@ -1,0 +1,64 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT \n                id,\n                logical_msg_id,\n                chat_id,\n                from_user_id,\n                from_device_id,\n                header as \"header: Value\",\n                ciphertext,\n                created_at as \"created_at?\"\n            FROM messages\n            WHERE to_device_id = $1\n            AND delivered_at IS NULL\n            ORDER BY created_at ASC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "logical_msg_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "chat_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "from_user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "from_device_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 5,
+        "name": "header: Value",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 6,
+        "name": "ciphertext",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "created_at?",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "e9c98599b6ec429d002a56125a9263368cb54e058969038bcdb43ccaddd63e42"
+}
