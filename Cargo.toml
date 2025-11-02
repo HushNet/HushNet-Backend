@@ -27,5 +27,5 @@ chrono = {version = "0.4.42", features = ["serde"]}
 ed25519-dalek = "2.0.0"
 jsonwebtoken = {version = "10.0.0", features = ["rust_crypto"]}
 base64 = "0.22.1"
-
+rsa = "=0.10.0-rc.9"
 
