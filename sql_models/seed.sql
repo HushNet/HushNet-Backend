@@ -269,3 +269,38 @@ CREATE TRIGGER devices_notify_trigger
 AFTER UPDATE OR INSERT ON devices
 FOR EACH ROW
 EXECUTE FUNCTION notify_device_update();
+
+-- =========================
+-- Pending Sessions channel
+-- =========================
+CREATE OR REPLACE FUNCTION notify_new_pending_session() RETURNS trigger AS $$
+DECLARE
+  recipient_user UUID;
+BEGIN
+  SELECT user_id INTO recipient_user
+  FROM devices
+  WHERE id = NEW.recipient_device_id;
+
+  IF recipient_user IS NOT NULL THEN
+    PERFORM pg_notify(
+      'pending_sessions_channel',
+      json_build_object(
+        'type', 'pending_session',
+        'user_id', recipient_user,
+        'recipient_device_id', NEW.recipient_device_id,
+        'sender_device_id', NEW.sender_device_id,
+        'pending_session_id', NEW.id,
+        'created_at', NEW.created_at
+      )::text
+    );
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS pending_sessions_notify_trigger ON pending_sessions;
+CREATE TRIGGER pending_sessions_notify_trigger
+AFTER INSERT ON pending_sessions
+FOR EACH ROW
+EXECUTE FUNCTION notify_new_pending_session();
