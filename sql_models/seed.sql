@@ -277,9 +277,13 @@ CREATE OR REPLACE FUNCTION notify_new_pending_session() RETURNS trigger AS $$
 DECLARE
   recipient_user UUID;
 BEGIN
-  SELECT user_id INTO recipient_user
-  FROM devices
-  WHERE id = NEW.recipient_device_id;
+  SELECT u.id INTO recipient_user
+  FROM users u
+  JOIN devices d ON d.user_id = u.id
+  WHERE d.id = NEW.recipient_device_id;
+
+  RAISE NOTICE 'Trigger fired: sender_device=%, recipient_device=%, found_user=%',
+    NEW.sender_device_id, NEW.recipient_device_id, recipient_user;
 
   IF recipient_user IS NOT NULL THEN
     PERFORM pg_notify(
@@ -293,11 +297,15 @@ BEGIN
         'created_at', NEW.created_at
       )::text
     );
+    RAISE NOTICE 'Notification sent to user_id=%', recipient_user;
+  ELSE
+    RAISE NOTICE 'No recipient_user found for device_id=%', NEW.recipient_device_id;
   END IF;
 
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
 
 DROP TRIGGER IF EXISTS pending_sessions_notify_trigger ON pending_sessions;
 CREATE TRIGGER pending_sessions_notify_trigger

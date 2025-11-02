@@ -9,6 +9,7 @@ pub async fn start_pg_listeners(pool: PgPool, tx: broadcast::Sender<RealtimeEven
     listener.listen_all(vec![
         "messages_channel",
         "sessions_channel",
+        "pending_sessions_channel",
         "devices_channel",
     ]).await.unwrap();
 
