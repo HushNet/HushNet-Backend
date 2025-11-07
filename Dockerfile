@@ -16,7 +16,7 @@ RUN rustup toolchain install nightly && rustup default nightly
 WORKDIR /app
 
 # Copy manifests
-COPY Cargo.toml Cargo.lock ./
+COPY Cargo.toml ./
 
 # Copy source code
 COPY src ./src
