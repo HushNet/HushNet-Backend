@@ -1,9 +1,11 @@
-use std::{fs, path::Path};
-use ed25519_dalek::{Signature, SigningKey, VerifyingKey, ed25519::signature::rand_core::OsRng};
-use serde::{Deserialize, Serialize};
-use base64::{engine::general_purpose::STANDARD as B64, engine::general_purpose::URL_SAFE_NO_PAD, Engine};
+use base64::{
+    engine::general_purpose::STANDARD as B64, engine::general_purpose::URL_SAFE_NO_PAD, Engine,
+};
 use ed25519_dalek::Signer;
 use ed25519_dalek::Verifier;
+use ed25519_dalek::{ed25519::signature::rand_core::OsRng, Signature, SigningKey, VerifyingKey};
+use serde::{Deserialize, Serialize};
+use std::{fs, path::Path};
 
 #[derive(Serialize, Deserialize)]
 pub struct NodeKeys {
@@ -12,7 +14,6 @@ pub struct NodeKeys {
 }
 
 impl NodeKeys {
-
     pub fn get_node_keys_path() -> std::path::PathBuf {
         let home_dir = Path::new("~/.hushnet");
         if !home_dir.exists() {
@@ -29,7 +30,10 @@ impl NodeKeys {
         let private_b64 = B64.encode(signing_key.to_bytes());
         let public_b64 = B64.encode(verifying_key.to_bytes());
 
-        let keys = NodeKeys { public_b64, private_b64 };
+        let keys = NodeKeys {
+            public_b64,
+            private_b64,
+        };
 
         let path = Self::get_node_keys_path();
         fs::create_dir_all(path.parent().unwrap())?;
@@ -51,7 +55,7 @@ impl NodeKeys {
 
     pub fn signing_key(&self) -> anyhow::Result<SigningKey> {
         let bytes = B64.decode(&self.private_b64)?;
-                let key_bytes: [u8; 32] = bytes
+        let key_bytes: [u8; 32] = bytes
             .try_into()
             .map_err(|_| anyhow::anyhow!("invalid private key length (expected 32 bytes)"))?;
 
@@ -63,8 +67,7 @@ impl NodeKeys {
         let key_bytes: [u8; 32] = bytes
             .try_into()
             .map_err(|_| anyhow::anyhow!("invalid public key length (expected 32 bytes)"))?;
-        let vk = VerifyingKey::from_bytes(&key_bytes)
-            .map_err(|e| anyhow::anyhow!(e))?;
+        let vk = VerifyingKey::from_bytes(&key_bytes).map_err(|e| anyhow::anyhow!(e))?;
         Ok(vk)
     }
 
@@ -83,5 +86,4 @@ impl NodeKeys {
         let sig = Signature::from_bytes(&key_bytes);
         Ok(vk.verify(message, &sig).is_ok())
     }
-
 }

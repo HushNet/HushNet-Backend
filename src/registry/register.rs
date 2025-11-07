@@ -1,8 +1,8 @@
 use anyhow::Result;
 use base64::{engine::general_purpose::STANDARD as B64, Engine};
-use ed25519_dalek::{Signer};
-use serde_json::json;
+use ed25519_dalek::Signer;
 use reqwest::Client;
+use serde_json::json;
 
 use crate::utils::node_keys::NodeKeys;
 
@@ -10,8 +10,10 @@ pub async fn register_with_registry(registry_url: &str) -> Result<()> {
     let keys = NodeKeys::load_or_generate()?;
     let client = Client::new();
     let node_name = std::env::var("NODE_NAME").unwrap_or_else(|_| "node-unknown".into());
-    let node_host = std::env::var("NODE_HOST").unwrap_or_else(|_| "node-unknown.hushnet.net".into());
-    let node_api_url = std::env::var("NODE_API_URL").unwrap_or_else(|_| format!("https://{}/api", node_host));
+    let node_host =
+        std::env::var("NODE_HOST").unwrap_or_else(|_| "node-unknown.hushnet.net".into());
+    let node_api_url =
+        std::env::var("NODE_API_URL").unwrap_or_else(|_| format!("https://{}/api", node_host));
     let contact_email = std::env::var("CONTACT_EMAIL").unwrap_or_else(|_| "ops@hushnet.net".into());
     let challenge_res = client
         .post(format!("{registry_url}/api/registry/challenge"))
