@@ -19,8 +19,8 @@ anyhow = "1.0"
 sqlx = { version = "0.8.6", features = ["runtime-tokio", "macros", "postgres", "uuid", "chrono"] }
 uuid = {version = "1.18.1", features = ["serde", "v4"]}
 chrono = {version = "0.4.42", features = ["serde"]}
-ed25519-dalek = "2.0.0"
+ed25519-dalek = { version = "2.2.0", features = ["rand_core", "serde"] }
 jsonwebtoken = {version = "10.0.0", features = ["rust_crypto"]}
 base64 = "0.22.1"
 rsa = "=0.10.0-rc.9"
-
+reqwest = { version = "0.12.24", features = ["json", "rustls-tls"] }

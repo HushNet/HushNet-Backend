@@ -11,12 +11,16 @@ use tokio::sync::broadcast;
 mod app_state;
 mod realtime;
 mod utils;
+mod registry;
 
 use std::env;
 
 use crate::app_state::AppState;
 use crate::models::realtime::RealtimeEvent;
 use crate::realtime::listener::start_pg_listeners;
+use crate::utils::node_keys::NodeKeys;
+use registry::register::register_with_registry;
+
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
     tracing_subscriber::fmt::init();
@@ -26,6 +30,11 @@ async fn main() -> Result<(), anyhow::Error> {
     let server_port = env::var("SERVER_PORT").unwrap_or_else(|_| "8080".into());
     let pool: sqlx::Pool<sqlx::Postgres> = PgPool::connect(&database_url).await?;
     let jwt_secret = std::env::var("JWT_SECRET").unwrap();
+    let registry_url = env::var("REGISTRY_URL").unwrap_or_else(|_| "https://registry.hushnet.net".into());
+    let keys = NodeKeys::load_or_generate()?;
+    println!("Public key (base64): {}", keys.public_b64);
+    register_with_registry(&registry_url).await?;
+
 
     let state: AppState = AppState {
         pool: pool.clone(),
