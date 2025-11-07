@@ -918,6 +918,8 @@ dependencies = [
  "dotenvy",
  "ed25519-dalek",
  "jsonwebtoken",
+ "rand 0.8.5",
+ "rand_core 0.6.4",
  "reqwest",
  "rsa 0.10.0-rc.9",
  "serde",
@@ -1712,7 +1714,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.52.0",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
