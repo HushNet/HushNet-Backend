@@ -9,11 +9,14 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
+
+RUN rustup toolchain install nightly && rustup default nightly
+
 # Create app directory
 WORKDIR /app
 
 # Copy manifests
-COPY Cargo.toml ./
+COPY Cargo.toml Cargo.lock ./
 
 # Copy source code
 COPY src ./src
@@ -22,7 +25,7 @@ COPY .sqlx ./.sqlx
 COPY sql_models ./sql_models
 
 # Build the application in release mode
-RUN cargo build --release 
+RUN cargo build --release
 # ============================================
 # Runtime Stage
 # ============================================
