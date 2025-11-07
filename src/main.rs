@@ -34,7 +34,14 @@ async fn main() -> Result<(), anyhow::Error> {
         env::var("REGISTRY_URL").unwrap_or_else(|_| "https://registry.hushnet.net".into());
     let keys = NodeKeys::load_or_generate()?;
     println!("Public key (base64): {}", keys.public_b64);
-    register_with_registry(&registry_url).await?;
+    if env::var("REGISTER_TO_REGISTRY")
+        .unwrap_or_else(|_| "false".into())
+        .to_lowercase()
+        == "true"
+    {
+        println!("Registering with registry at {}", registry_url);
+        register_with_registry(&registry_url).await?;
+    }
 
     let state: AppState = AppState {
         pool: pool.clone(),
