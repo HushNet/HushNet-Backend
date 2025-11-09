@@ -6,10 +6,6 @@ pub struct EnrollmentClaims {
     pub exp: usize,
 }
 
-pub struct UsedToken {
-    pub token: String,
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

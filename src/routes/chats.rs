@@ -1,7 +1,4 @@
-use axum::{
-    routing::{get, post},
-    Router,
-};
+use axum::{routing::get, Router};
 
 use crate::{app_state::AppState, controllers::chats_controller};
 

@@ -8,12 +8,12 @@ pub fn generate_enrollment_tokens(user_id: &Uuid, secret: &str) -> String {
         sub: user_id.to_string(),
         exp: (Utc::now() + Duration::minutes(5)).timestamp() as usize,
     };
-    return encode(
+    encode(
         &Header::default(),
         &claims,
         &EncodingKey::from_secret(secret.as_bytes()),
     )
-    .expect("Failed to generate enrollment token");
+    .expect("Failed to generate enrollment token")
 }
 
 pub fn verify_enrollment_token(token: &str, secret: &str) -> Option<Uuid> {

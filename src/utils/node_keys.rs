@@ -1,6 +1,4 @@
-use base64::{
-    engine::general_purpose::STANDARD as B64, engine::general_purpose::URL_SAFE_NO_PAD, Engine,
-};
+use base64::{engine::general_purpose::STANDARD as B64, Engine};
 use ed25519_dalek::Signer;
 use ed25519_dalek::Verifier;
 use ed25519_dalek::{ed25519::signature::rand_core::OsRng, Signature, SigningKey, VerifyingKey};
@@ -17,13 +15,12 @@ impl NodeKeys {
     pub fn get_node_keys_path() -> std::path::PathBuf {
         let home_dir = Path::new(".hushnet");
         if !home_dir.exists() {
-            std::fs::create_dir_all(&home_dir).expect("Could not create home directory");
+            std::fs::create_dir_all(home_dir).expect("Could not create home directory");
         }
         home_dir.join("node_keys")
     }
 
     pub fn generate_and_save() -> anyhow::Result<Self> {
-        let mut rng = OsRng;
         let signing_key = SigningKey::generate(&mut OsRng);
         let verifying_key: VerifyingKey = signing_key.verifying_key();
 
@@ -62,6 +59,7 @@ impl NodeKeys {
         Ok(SigningKey::from_bytes(&key_bytes))
     }
 
+    #[allow(dead_code)]
     pub fn verifying_key(&self) -> anyhow::Result<VerifyingKey> {
         let bytes = B64.decode(&self.public_b64)?;
         let key_bytes: [u8; 32] = bytes
@@ -71,12 +69,14 @@ impl NodeKeys {
         Ok(vk)
     }
 
+    #[allow(dead_code)]
     pub fn sign_message(&self, message: &[u8]) -> anyhow::Result<String> {
         let signing_key = self.signing_key()?;
         let signature: Signature = signing_key.sign(message);
         Ok(B64.encode(signature.to_bytes()))
     }
 
+    #[allow(dead_code)]
     pub fn verify_message(&self, message: &[u8], signature_b64: &str) -> anyhow::Result<bool> {
         let vk = self.verifying_key()?;
         let sig_bytes = B64.decode(signature_b64)?;

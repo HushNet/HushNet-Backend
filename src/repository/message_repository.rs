@@ -1,8 +1,7 @@
 use crate::{
     middlewares::auth::AuthenticatedDevice,
-    models::message::{Message, MessageView, OutgoingMessage},
+    models::message::{MessageView, OutgoingMessage},
 };
-use axum::{extract::State, Json};
 use serde_json::Value;
 use sqlx::PgPool;
 use uuid::Uuid;

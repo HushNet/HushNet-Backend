@@ -10,22 +10,16 @@ pub async fn get_all_chats(
     AuthenticatedDevice(sender): AuthenticatedDevice,
 ) -> impl IntoResponse {
     match chat_repository::get_chats_for_device(&state.pool, AuthenticatedDevice(sender)).await {
-        Ok(data) => return (StatusCode::OK, Json(data)).into_response(),
+        Ok(data) => (StatusCode::OK, Json(data)).into_response(),
         Err(e) => {
             eprintln!("Error when fetching chats {}", e);
-            return (
+            (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
                     "error": "Internal server error"
                 })),
             )
-                .into_response();
+                .into_response()
         }
     }
-}
-
-pub async fn get_devices_id_for_chat(
-    State(state): State<AppState>,
-    AuthenticatedDevice(sender): AuthenticatedDevice,
-) -> impl IntoResponse {
 }

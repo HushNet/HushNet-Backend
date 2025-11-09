@@ -1,14 +1,11 @@
-use axum::extract::Path;
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
-use base64::{engine::general_purpose, Engine as _};
 use serde::Deserialize;
 use serde_json::json;
-use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::app_state::AppState;
 use crate::middlewares::auth::AuthenticatedDevice;
-use crate::repository::{device_repository, session_repository};
+use crate::repository::session_repository;
 
 #[derive(Debug, serde::Deserialize)]
 pub struct SessionInit {
@@ -41,7 +38,7 @@ pub async fn create_session(
         return Err((StatusCode::BAD_REQUEST, "Cannot create session with self"));
     }
 
-    let mut tx = state.pool.begin().await.map_err(|_| {
+    let tx = state.pool.begin().await.map_err(|_| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             "Failed to start transaction",

@@ -3,9 +3,8 @@ use axum::{
         ws::{Message, WebSocket},
         Path, WebSocketUpgrade,
     },
-    response::{IntoResponse, Response},
-    routing::any,
-    Extension, Router,
+    response::IntoResponse,
+    Extension,
 };
 
 use tokio::sync::broadcast;
