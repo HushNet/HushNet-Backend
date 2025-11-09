@@ -3,7 +3,7 @@ use axum::{
         ws::{Message, WebSocket},
         Path, WebSocketUpgrade,
     },
-    response::{IntoResponse},
+    response::IntoResponse,
     Extension,
 };
 

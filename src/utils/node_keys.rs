@@ -1,6 +1,4 @@
-use base64::{
-    engine::general_purpose::STANDARD as B64, Engine,
-};
+use base64::{engine::general_purpose::STANDARD as B64, Engine};
 use ed25519_dalek::Signer;
 use ed25519_dalek::Verifier;
 use ed25519_dalek::{ed25519::signature::rand_core::OsRng, Signature, SigningKey, VerifyingKey};
