@@ -83,12 +83,10 @@ pub async fn login_user(
             .into_response();
     }
     match user_repository::find_user_by_pubkey(&state.pool, &payload.identity_pubkey).await {
-        Ok(user) => {
-             (StatusCode::OK, Json(json!(user))).into_response()
-        }
+        Ok(user) => (StatusCode::OK, Json(json!(user))).into_response(),
         Err(e) => {
             eprintln!("error : {}", e);
-             (
+            (
                 StatusCode::UNAUTHORIZED,
                 Json(json!({"error": "Unauthorized"})),
             )
@@ -105,7 +103,7 @@ pub async fn get_user_by_id(
         Ok(data) => (StatusCode::OK, Json(data)).into_response(),
         Err(e) => {
             eprintln!("Error when fetching devices {}", e);
-             (
+            (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
                     "error": "Internal server error"
