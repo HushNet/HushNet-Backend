@@ -1,6 +1,6 @@
 use crate::{app_state::AppState, controllers::root_controller};
 use axum::{
-    routing::{get, post},
+    routing::{get},
     Router,
 };
 

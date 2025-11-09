@@ -1,3 +1,4 @@
 target/
 .env
 ~/.hushnet/node_keys
+.hushnet/

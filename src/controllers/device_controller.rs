@@ -2,7 +2,6 @@ use axum::extract::Path;
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use serde::Deserialize;
 use serde_json::json;
-use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::app_state::AppState;

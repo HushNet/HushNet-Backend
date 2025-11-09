@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct Chat {
     pub id: Uuid,
     pub chat_type: Option<String>, // 'direct' or 'group'

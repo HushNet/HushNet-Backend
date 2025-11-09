@@ -15,6 +15,7 @@ pub struct PendingSession {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct Session {
     pub id: Uuid,
     pub chat_id: Option<Uuid>,

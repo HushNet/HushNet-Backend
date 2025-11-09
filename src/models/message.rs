@@ -4,6 +4,7 @@ use serde_json::Value;
 use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow, Clone)]
+#[allow(dead_code)]
 pub struct Message {
     pub id: Uuid,
     pub logical_msg_id: String,

@@ -1,6 +1,5 @@
 use crate::{app_state::AppState, controllers::session_controller};
 use axum::{
-    middleware,
     routing::{get, post},
     Router,
 };
