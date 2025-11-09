@@ -21,18 +21,16 @@ pub async fn send_message(
     let from_user_id: Uuid = device.user_id;
 
     match insert_message(&state.pool, device.id, from_user_id, msg).await {
-        Ok(()) => {
-             (
-                StatusCode::OK,
-                Json(json!({
-                    "success": "true"
-                })),
-            )
-                .into_response()
-        }
+        Ok(()) => (
+            StatusCode::OK,
+            Json(json!({
+                "success": "true"
+            })),
+        )
+            .into_response(),
         Err(e) => {
             eprintln!("Error when inserting message {}", e);
-             (
+            (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({"error": "Internal server error"})),
             )
@@ -46,10 +44,10 @@ pub async fn get_pending_messages(
     AuthenticatedDevice(device): AuthenticatedDevice,
 ) -> impl IntoResponse {
     match fetch_pending_messages(&state.pool, AuthenticatedDevice(device)).await {
-        Ok(messages) =>  (StatusCode::OK, Json(messages)).into_response(),
+        Ok(messages) => (StatusCode::OK, Json(messages)).into_response(),
         Err(e) => {
             eprintln!("Error when fetching pending messages {}", e);
-             (
+            (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({"error": "Internal server error"})),
             )

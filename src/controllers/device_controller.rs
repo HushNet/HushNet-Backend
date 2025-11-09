@@ -33,7 +33,7 @@ pub async fn get_devices_for_user(
         Ok(data) => (StatusCode::OK, Json(data)).into_response(),
         Err(e) => {
             eprintln!("Error when fetching devices {}", e);
-             (
+            (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
                     "error": "Internal server error"
