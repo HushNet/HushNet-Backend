@@ -102,10 +102,12 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest
-      - name: 🔧 Set up Docker Buildx
+      - name: 🏗️ Set up Docker Buildx
+        id: buildx
         uses: docker/setup-buildx-action@v3
         with:
           driver: docker-container
+          install: true
 
       - name: 🐳 Build and push Docker image
         id: push
@@ -114,7 +116,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          builder: default
+          builder: ${{ steps.buildx.outputs.name }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64,linux/arm64
