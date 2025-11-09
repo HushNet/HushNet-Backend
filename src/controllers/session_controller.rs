@@ -5,7 +5,7 @@ use uuid::Uuid;
 
 use crate::app_state::AppState;
 use crate::middlewares::auth::AuthenticatedDevice;
-use crate::repository::{session_repository};
+use crate::repository::session_repository;
 
 #[derive(Debug, serde::Deserialize)]
 pub struct SessionInit {
