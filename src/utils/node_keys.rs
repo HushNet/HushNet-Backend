@@ -17,7 +17,7 @@ impl NodeKeys {
     pub fn get_node_keys_path() -> std::path::PathBuf {
         let home_dir = Path::new(".hushnet");
         if !home_dir.exists() {
-            std::fs::create_dir_all(&home_dir).expect("Could not create home directory");
+            std::fs::create_dir_all(home_dir).expect("Could not create home directory");
         }
         home_dir.join("node_keys")
     }

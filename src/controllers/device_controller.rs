@@ -30,16 +30,16 @@ pub async fn get_devices_for_user(
     Path(user_id): Path<Uuid>,
 ) -> impl IntoResponse {
     match device_repository::get_devices_by_user_id(&state.pool, &user_id).await {
-        Ok(data) => return (StatusCode::OK, Json(data)).into_response(),
+        Ok(data) => (StatusCode::OK, Json(data)).into_response(),
         Err(e) => {
             eprintln!("Error when fetching devices {}", e);
-            return (
+             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
                     "error": "Internal server error"
                 })),
             )
-                .into_response();
+                .into_response()
         }
     }
 }

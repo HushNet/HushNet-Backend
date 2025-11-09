@@ -7,6 +7,7 @@ use crate::models::{
 use sqlx::{PgPool, Result};
 use uuid::Uuid;
 
+#[allow(clippy::too_many_arguments)]
 pub async fn create_device(
     pool: &PgPool,
     user_id: &Uuid,

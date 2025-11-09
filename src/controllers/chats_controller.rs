@@ -13,13 +13,13 @@ pub async fn get_all_chats(
         Ok(data) => (StatusCode::OK, Json(data)).into_response(),
         Err(e) => {
             eprintln!("Error when fetching chats {}", e);
-            return (
+            (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
                     "error": "Internal server error"
                 })),
             )
-                .into_response();
+                .into_response()
         }
     }
 }
