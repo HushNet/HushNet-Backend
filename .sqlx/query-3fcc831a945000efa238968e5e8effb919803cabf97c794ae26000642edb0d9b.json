@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO users (username, federated_address, home_node_id)\n        VALUES ($1, $2, $3)\n        ON CONFLICT (federated_address) DO UPDATE\n          SET username = EXCLUDED.username\n        RETURNING id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "3fcc831a945000efa238968e5e8effb919803cabf97c794ae26000642edb0d9b"
+}

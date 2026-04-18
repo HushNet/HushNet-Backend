@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO devices (\n            id, user_id, identity_pubkey,\n            prekey_pubkey, signed_prekey_pub, signed_prekey_sig, one_time_prekeys\n        )\n        VALUES ($1, $2, $3, '', '', '', '[]'::jsonb)\n        ON CONFLICT (id) DO NOTHING\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "38f3df401e8dd0ab450303b16354ab9fccfaf4c4376d8091bcddb58b16b15c5e"
+}

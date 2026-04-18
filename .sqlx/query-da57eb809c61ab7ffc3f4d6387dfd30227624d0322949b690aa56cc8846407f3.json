@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE federation_outbox\n             SET status = 'failed', last_attempt = NOW(), attempt_count = $2\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "da57eb809c61ab7ffc3f4d6387dfd30227624d0322949b690aa56cc8846407f3"
+}
