@@ -47,7 +47,7 @@ WORKDIR /app
 COPY --from=builder /app/target/release/hushnet-backend /app/hushnet-backend
 
 # Change ownership
-RUN chown -R hushnet:hushnet /app
+RUN chown -R hushnet:hushnet /app && mkdir -p /app/.hushnet && chown hushnet:hushnet /app/.hushnet
 
 # Switch to non-root user
 USER hushnet
