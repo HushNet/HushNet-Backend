@@ -130,6 +130,7 @@ pub async fn get_device_bundle(
         bundles.push(DeviceBundle {
             device_id: row.id,
             identity_pubkey: row.identity_pubkey,
+            prekey_pubkey: row.prekey_pubkey,
             signed_prekey_pub: row.signed_prekey_pub,
             signed_prekey_sig: row.signed_prekey_sig,
             one_time_prekeys: otpks,
