@@ -22,6 +22,7 @@ pub struct ChatView {
     pub chat_type: Option<String>,
     pub partner_user_id: Option<Uuid>,
     pub partner_username: Option<String>,
+    pub partner_federated_address: Option<String>,
     pub name: Option<String>,
     pub last_message_id: Option<Uuid>,
     pub updated_at: Option<NaiveDateTime>,

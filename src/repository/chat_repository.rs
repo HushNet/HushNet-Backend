@@ -22,26 +22,34 @@ pub async fn get_chats_for_device(
     let chats = sqlx::query_as!(
         ChatView,
         r#"
-        SELECT 
+        SELECT
             c.id,
             c.chat_type,
-            CASE 
+            CASE
                 WHEN c.user_a = $1 THEN c.user_b
                 ELSE c.user_a
             END AS partner_user_id,
             (
-                SELECT u.username 
+                SELECT u.username
                 FROM users u
-                WHERE u.id = CASE 
+                WHERE u.id = CASE
                     WHEN c.user_a = $1 THEN c.user_b
                     ELSE c.user_a
                 END
             ) AS partner_username,
+            (
+                SELECT u.federated_address
+                FROM users u
+                WHERE u.id = CASE
+                    WHEN c.user_a = $1 THEN c.user_b
+                    ELSE c.user_a
+                END
+            ) AS partner_federated_address,
             c.name,
             c.last_message_id,
             c.updated_at
         FROM chats c
-        WHERE 
+        WHERE
             (c.chat_type = 'direct' AND ($1 IN (c.user_a, c.user_b)))
             OR (c.chat_type = 'group' AND c.id IN (
                 SELECT chat_id FROM chat_members WHERE user_id = $1
