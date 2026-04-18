@@ -11,11 +11,11 @@ pub fn routes() -> Router<AppState> {
         .route("/s2s/info", get(federation_controller::node_info))
         // ── S2S (node-to-node, AuthenticatedNode required inside handler) ───
         .route(
-            "/s2s/users/{username}/devices",
+            "/s2s/users/:username/devices",
             get(federation_controller::get_user_devices),
         )
         .route(
-            "/s2s/users/{username}/keys",
+            "/s2s/users/:username/keys",
             get(federation_controller::get_user_keys),
         )
         .route("/s2s/sessions", post(federation_controller::receive_session))
@@ -23,7 +23,7 @@ pub fn routes() -> Router<AppState> {
         .route("/s2s/ack", post(federation_controller::receive_ack))
         // ── Client-facing federated proxy ────────────────────────────────────
         .route(
-            "/s2s/federated/{username}/{node_id}/keys",
+            "/s2s/federated/:username/:node_id/keys",
             get(federation_controller::federated_keys),
         )
 }
