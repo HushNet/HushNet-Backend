@@ -22,10 +22,8 @@ pub fn routes() -> Router<AppState> {
         .route("/s2s/messages", post(federation_controller::receive_messages))
         .route("/s2s/ack", post(federation_controller::receive_ack))
         // ── Client-facing federated proxy ────────────────────────────────────
-        // Two separate path segments to avoid %40-encoding issues with proxies.
-        // URL: GET /users/federated/{username}/{node_id}/keys
         .route(
-            "/users/federated/{username}/{node_id}/keys",
+            "/s2s/federated/{username}/{node_id}/keys",
             get(federation_controller::federated_keys),
         )
 }
