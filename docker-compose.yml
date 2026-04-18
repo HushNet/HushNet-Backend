@@ -43,6 +43,8 @@ services:
       REGISTER_TO_REGISTRY: ${REGISTER_TO_REGISTRY:-true}
     env_file:
       - .env
+    volumes:
+      - node_keys:/app/.hushnet
     ports:
       - "${SERVER_PORT:-8080}:${SERVER_PORT:-8080}"
     depends_on:
@@ -59,6 +61,8 @@ services:
 
 volumes:
   postgres_data:
+    driver: local
+  node_keys:
     driver: local
 
 networks:
