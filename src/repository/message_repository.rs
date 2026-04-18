@@ -62,26 +62,24 @@ pub async fn insert_federated_message(
     header: &Value,
     ciphertext: &str,
 ) -> Result<bool, sqlx::Error> {
-    let result = sqlx::query!(
-        r#"
-        INSERT INTO messages (
-            logical_msg_id, chat_id,
-            from_user_id, from_device_id,
-            to_user_id, to_device_id,
-            header, ciphertext
-        )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-        ON CONFLICT (logical_msg_id, to_device_id) DO NOTHING
-        "#,
-        logical_msg_id,
-        chat_id,
-        from_user_id,
-        from_device_id,
-        to_user_id,
-        to_device_id,
-        header,
-        ciphertext,
+    let result = sqlx::query(
+        "INSERT INTO messages (
+             logical_msg_id, chat_id,
+             from_user_id, from_device_id,
+             to_user_id, to_device_id,
+             header, ciphertext
+         )
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         ON CONFLICT (logical_msg_id, to_device_id) DO NOTHING",
     )
+    .bind(logical_msg_id)
+    .bind(chat_id)
+    .bind(from_user_id)
+    .bind(from_device_id)
+    .bind(to_user_id)
+    .bind(to_device_id)
+    .bind(header)
+    .bind(ciphertext)
     .execute(pool)
     .await?;
     Ok(result.rows_affected() == 1)

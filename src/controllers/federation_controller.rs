@@ -1,25 +1,3 @@
-// src/controllers/federation_controller.rs
-//
-// Handlers for the /s2s/* endpoint group.
-//
-// All handlers except node_info require the AuthenticatedNode extractor, which
-// verifies the peer's Ed25519 signature before the handler body runs. Handlers
-// receive the authenticated peer's FederationNode as a typed argument and can
-// use it for logging or for constructing shadow records.
-//
-// Endpoint overview:
-//
-//   GET  /s2s/info                  — public, no auth
-//   GET  /s2s/users/:username/devices — return device list (auth required)
-//   GET  /s2s/users/:username/keys  — return prekey bundle, consume OTPK (auth)
-//   POST /s2s/sessions              — accept forwarded X3DH init (auth)
-//   POST /s2s/messages              — accept forwarded ciphertexts (auth)
-//   POST /s2s/ack                   — delivery acknowledgment (auth)
-//
-// Plus one client-facing federated lookup:
-//
-//   GET  /users/federated/:address/keys — proxy prekey bundle from remote node
-
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -27,6 +5,7 @@ use axum::{
     Json,
 };
 use serde_json::json;
+use tracing::{debug, error, info, warn};
 
 use crate::{
     app_state::AppState,
@@ -40,13 +19,8 @@ use crate::{
 
 // ─── GET /s2s/info ───────────────────────────────────────────────────────────
 
-/// Return this node's public identity.
-///
-/// No authentication required. Peers call this during bootstrapping to obtain
-/// the public key before they have a cached entry for this node. The caller
-/// should cross-check the returned key against the central registry to guard
-/// against a MITM substituting a different key.
 pub async fn node_info(State(state): State<AppState>) -> impl IntoResponse {
+    info!(node_id = %state.this_node_id, "GET /s2s/info");
     let info = NodeInfo {
         node_id: state.this_node_id.clone(),
         api_url: state.this_api_url.clone(),
@@ -58,41 +32,44 @@ pub async fn node_info(State(state): State<AppState>) -> impl IntoResponse {
 
 // ─── GET /s2s/users/:username/devices ────────────────────────────────────────
 
-/// Return the device list for a local user.
-///
-/// Used by a peer to enumerate recipient devices before building per-device
-/// encrypted payloads. Only local (non-shadow) users are served; requests for
-/// shadow users (home_node_id IS NOT NULL) return 404.
 pub async fn get_user_devices(
     State(state): State<AppState>,
-    AuthenticatedNode(_peer): AuthenticatedNode,
+    AuthenticatedNode(peer): AuthenticatedNode,
     Path(username): Path<String>,
 ) -> impl IntoResponse {
-    let user_id = match federation_repository::get_local_user_id_by_username(&state.pool, &username)
-        .await
-    {
-        Ok(Some(id)) => id,
-        Ok(None) => {
-            return (
-                StatusCode::NOT_FOUND,
-                Json(json!({"error": "user not found or not local to this node"})),
-            )
-                .into_response()
-        }
-        Err(e) => {
-            eprintln!("[s2s] db error in get_user_devices: {e}");
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"error": "internal error"})),
-            )
-                .into_response();
-        }
-    };
+    info!(peer = %peer.node_id, %username, "GET /s2s/users/:username/devices");
+
+    let user_id =
+        match federation_repository::get_local_user_id_by_username(&state.pool, &username).await {
+            Ok(Some(id)) => {
+                debug!(%username, %id, "local user found");
+                id
+            }
+            Ok(None) => {
+                warn!(%username, "user not found or is a shadow record");
+                return (
+                    StatusCode::NOT_FOUND,
+                    Json(json!({"error": "user not found or not local to this node"})),
+                )
+                    .into_response();
+            }
+            Err(e) => {
+                error!(%username, err = %e, "db error resolving user");
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({"error": "internal error"})),
+                )
+                    .into_response();
+            }
+        };
 
     match device_repository::get_devices_by_user_id(&state.pool, &user_id).await {
-        Ok(devices) => (StatusCode::OK, Json(devices)).into_response(),
+        Ok(devices) => {
+            debug!(%username, count = devices.len(), "returning devices");
+            (StatusCode::OK, Json(devices)).into_response()
+        }
         Err(e) => {
-            eprintln!("[s2s] db error fetching devices: {e}");
+            error!(%username, err = %e, "db error fetching devices");
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({"error": "internal error"})),
@@ -104,47 +81,44 @@ pub async fn get_user_devices(
 
 // ─── GET /s2s/users/:username/keys ───────────────────────────────────────────
 
-/// Return the prekey bundle for a local user, consuming one OTPK per device.
-///
-/// Semantics are identical to GET /users/:id/keys on the client API. The
-/// caller (Node A) receives the bundles, passes them to its client (Client A),
-/// who uses them for X3DH key agreement without the servers ever seeing the
-/// resulting shared secret.
-///
-/// If OTPKs are exhausted, the bundle is still returned (with an empty
-/// one_time_prekeys list). The caller signals this to its client via the
-/// `otpk_available` flag so the client can decide whether to proceed with
-/// SPK-only X3DH or wait for replenishment.
 pub async fn get_user_keys(
     State(state): State<AppState>,
-    AuthenticatedNode(_peer): AuthenticatedNode,
+    AuthenticatedNode(peer): AuthenticatedNode,
     Path(username): Path<String>,
 ) -> impl IntoResponse {
-    let user_id = match federation_repository::get_local_user_id_by_username(&state.pool, &username)
-        .await
-    {
-        Ok(Some(id)) => id,
-        Ok(None) => {
-            return (
-                StatusCode::NOT_FOUND,
-                Json(json!({"error": "user not found or not local to this node"})),
-            )
-                .into_response()
-        }
-        Err(e) => {
-            eprintln!("[s2s] db error in get_user_keys: {e}");
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"error": "internal error"})),
-            )
-                .into_response();
-        }
-    };
+    info!(peer = %peer.node_id, %username, "GET /s2s/users/:username/keys");
+
+    let user_id =
+        match federation_repository::get_local_user_id_by_username(&state.pool, &username).await {
+            Ok(Some(id)) => {
+                debug!(%username, %id, "local user found for key fetch");
+                id
+            }
+            Ok(None) => {
+                warn!(%username, "user not found or is a shadow record (key fetch)");
+                return (
+                    StatusCode::NOT_FOUND,
+                    Json(json!({"error": "user not found or not local to this node"})),
+                )
+                    .into_response();
+            }
+            Err(e) => {
+                error!(%username, err = %e, "db error resolving user for key fetch");
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({"error": "internal error"})),
+                )
+                    .into_response();
+            }
+        };
 
     match device_repository::get_device_bundle(&state.pool, &user_id).await {
-        Ok(bundle) => (StatusCode::OK, Json(bundle)).into_response(),
+        Ok(bundle) => {
+            debug!(%username, devices = bundle.len(), "returning key bundle");
+            (StatusCode::OK, Json(bundle)).into_response()
+        }
         Err(e) => {
-            eprintln!("[s2s] db error fetching key bundle: {e}");
+            error!(%username, err = %e, "db error fetching key bundle");
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({"error": "internal error"})),
@@ -156,36 +130,39 @@ pub async fn get_user_keys(
 
 // ─── POST /s2s/sessions ──────────────────────────────────────────────────────
 
-/// Accept a forwarded X3DH session initiation from a peer node.
-///
-/// Inserts the pending session(s) into this node's pending_sessions table.
-/// The PostgreSQL trigger notify_new_pending_session fires automatically,
-/// delivering a WebSocket event to the recipient client — the existing
-/// real-time path requires no changes.
-///
-/// Shadow records for the sender (user + device) are upserted if they do not
-/// already exist so that the FK constraints on pending_sessions are satisfied.
 pub async fn receive_session(
     State(state): State<AppState>,
     AuthenticatedNode(peer): AuthenticatedNode,
     Json(payload): Json<S2sSessionPayload>,
 ) -> impl IntoResponse {
-    // Upsert shadow user for the remote sender.
+    info!(
+        peer = %peer.node_id,
+        from = %payload.from_federated_address,
+        to   = %payload.to_user,
+        sessions = payload.sessions_init.len(),
+        "POST /s2s/sessions"
+    );
+
+    let sender_username = payload
+        .from_federated_address
+        .split('@')
+        .next()
+        .unwrap_or("unknown");
+
     let sender_local_id = match federation_repository::upsert_shadow_user(
         &state.pool,
-        payload
-            .from_federated_address
-            .split('@')
-            .next()
-            .unwrap_or("unknown"),
+        sender_username,
         &payload.from_federated_address,
         peer.id,
     )
     .await
     {
-        Ok(id) => id,
+        Ok(id) => {
+            debug!(federated = %payload.from_federated_address, local_id = %id, "shadow user upserted");
+            id
+        }
         Err(e) => {
-            eprintln!("[s2s] shadow user upsert failed: {e}");
+            error!(err = %e, "shadow user upsert failed");
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({"error": "internal error"})),
@@ -202,7 +179,7 @@ pub async fn receive_session(
     )
     .await
     {
-        eprintln!("[s2s] shadow device upsert failed: {e}");
+        error!(device_id = %payload.from_device_id, err = %e, "shadow device upsert failed");
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"error": "internal error"})),
@@ -210,8 +187,8 @@ pub async fn receive_session(
             .into_response();
     }
 
-    // Insert one pending_session row per recipient device.
     for init in &payload.sessions_init {
+        debug!(recipient_device = %init.recipient_device_id, "inserting pending session");
         if let Err(e) = session_repository::create_pending_session(
             &state.pool,
             &payload.from_device_id,
@@ -223,7 +200,7 @@ pub async fn receive_session(
         )
         .await
         {
-            eprintln!("[s2s] pending session insert failed: {e}");
+            error!(recipient_device = %init.recipient_device_id, err = %e, "pending session insert failed");
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({"error": "failed to store pending session"})),
@@ -232,67 +209,74 @@ pub async fn receive_session(
         }
     }
 
+    info!(from = %payload.from_federated_address, to = %payload.to_user, "sessions stored ok");
     (StatusCode::OK, Json(json!({"status": "ok"}))).into_response()
 }
 
 // ─── POST /s2s/messages ──────────────────────────────────────────────────────
 
-/// Accept forwarded ciphertexts for a local recipient.
-///
-/// For each device payload:
-/// - Deduplication check via the unique constraint (logical_msg_id, to_device_id).
-///   Duplicate payloads (from outbox retries) are silently skipped; the 200
-///   response is returned regardless so the sender stops retrying.
-/// - The PostgreSQL trigger notify_new_message fires on every genuine insert,
-///   pushing a WebSocket event to the recipient. No changes to the real-time
-///   path are needed.
-///
-/// The returned S2sAck.status is "delivered" if at least one new row was
-/// inserted, "duplicate" if all payloads were already present.
 pub async fn receive_messages(
     State(state): State<AppState>,
     AuthenticatedNode(peer): AuthenticatedNode,
     Json(payload): Json<S2sMessagePayload>,
 ) -> impl IntoResponse {
-    // Resolve the local recipient.
-    let recipient_id =
-        match federation_repository::get_local_user_id_by_username(&state.pool, &payload.to_user)
-            .await
-        {
-            Ok(Some(id)) => id,
-            Ok(None) => {
-                return (
-                    StatusCode::NOT_FOUND,
-                    Json(json!({"error": "recipient not found or not local to this node"})),
-                )
-                    .into_response()
-            }
-            Err(e) => {
-                eprintln!("[s2s] db error resolving recipient: {e}");
-                return (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(json!({"error": "internal error"})),
-                )
-                    .into_response();
-            }
-        };
+    info!(
+        peer        = %peer.node_id,
+        logical_id  = %payload.logical_msg_id,
+        from        = %payload.from_federated_address,
+        to_user     = %payload.to_user,
+        device_count = payload.payloads.len(),
+        "POST /s2s/messages"
+    );
 
-    // Upsert shadow records for the remote sender.
+    let recipient_id = match federation_repository::get_local_user_id_by_username(
+        &state.pool,
+        &payload.to_user,
+    )
+    .await
+    {
+        Ok(Some(id)) => {
+            debug!(username = %payload.to_user, local_id = %id, "recipient resolved");
+            id
+        }
+        Ok(None) => {
+            warn!(username = %payload.to_user, "recipient not found or is a shadow record");
+            return (
+                StatusCode::NOT_FOUND,
+                Json(json!({"error": "recipient not found or not local to this node"})),
+            )
+                .into_response();
+        }
+        Err(e) => {
+            error!(username = %payload.to_user, err = %e, "db error resolving recipient");
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error": "internal error"})),
+            )
+                .into_response();
+        }
+    };
+
+    let sender_username = payload
+        .from_federated_address
+        .split('@')
+        .next()
+        .unwrap_or("unknown");
+
     let sender_local_id = match federation_repository::upsert_shadow_user(
         &state.pool,
-        payload
-            .from_federated_address
-            .split('@')
-            .next()
-            .unwrap_or("unknown"),
+        sender_username,
         &payload.from_federated_address,
         peer.id,
     )
     .await
     {
-        Ok(id) => id,
+        Ok(id) => {
+            debug!(federated = %payload.from_federated_address, local_id = %id, "shadow user upserted");
+            id
+        }
         Err(e) => {
-            eprintln!("[s2s] shadow user upsert failed: {e}");
+            error!(err = %e, "shadow user upsert failed");
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({"error": "internal error"})),
@@ -309,7 +293,7 @@ pub async fn receive_messages(
     )
     .await
     {
-        eprintln!("[s2s] shadow device upsert failed: {e}");
+        error!(device_id = %payload.from_device_id, err = %e, "shadow device upsert failed");
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"error": "internal error"})),
@@ -317,7 +301,6 @@ pub async fn receive_messages(
             .into_response();
     }
 
-    // Find or create the local chat between shadow-sender and local-recipient.
     let chat_id = match federation_repository::get_or_create_direct_chat(
         &state.pool,
         sender_local_id,
@@ -325,9 +308,12 @@ pub async fn receive_messages(
     )
     .await
     {
-        Ok(id) => id,
+        Ok(id) => {
+            debug!(chat_id = %id, "chat resolved");
+            id
+        }
         Err(e) => {
-            eprintln!("[s2s] get_or_create_direct_chat failed: {e}");
+            error!(err = %e, "get_or_create_direct_chat failed");
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({"error": "internal error"})),
@@ -336,9 +322,9 @@ pub async fn receive_messages(
         }
     };
 
-    // Insert each per-device ciphertext, skipping duplicates.
     let mut any_new = false;
     for dev in &payload.payloads {
+        debug!(to_device = %dev.to_device_id, "inserting device payload");
         match message_repository::insert_federated_message(
             &state.pool,
             &payload.logical_msg_id,
@@ -352,10 +338,15 @@ pub async fn receive_messages(
         )
         .await
         {
-            Ok(true) => any_new = true,
-            Ok(false) => {} // duplicate, silently skip
+            Ok(true) => {
+                debug!(to_device = %dev.to_device_id, "message inserted");
+                any_new = true;
+            }
+            Ok(false) => {
+                debug!(to_device = %dev.to_device_id, "duplicate, skipped");
+            }
             Err(e) => {
-                eprintln!("[s2s] message insert failed: {e}");
+                error!(to_device = %dev.to_device_id, err = %e, "message insert failed");
                 return (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     Json(json!({"error": "internal error"})),
@@ -365,37 +356,30 @@ pub async fn receive_messages(
         }
     }
 
+    let status = if any_new { "delivered" } else { "duplicate" };
+    info!(logical_id = %payload.logical_msg_id, %status, "messages processed");
+
     let ack = S2sAck {
         logical_msg_id: payload.logical_msg_id,
-        status: if any_new {
-            "delivered".into()
-        } else {
-            "duplicate".into()
-        },
+        status: status.into(),
     };
     (StatusCode::OK, Json(ack)).into_response()
 }
 
 // ─── POST /s2s/ack ───────────────────────────────────────────────────────────
 
-/// Receive a delivery acknowledgment from a peer.
-///
-/// The outbox worker already marks entries delivered when it gets a 2xx from
-/// forward_messages, so this endpoint is not on the critical path. It exists
-/// for peers that want to proactively signal delivery (e.g. after a delayed
-/// WebSocket push) and for future monitoring use cases.
 pub async fn receive_ack(
     State(state): State<AppState>,
-    AuthenticatedNode(_peer): AuthenticatedNode,
+    AuthenticatedNode(peer): AuthenticatedNode,
     Json(ack): Json<S2sAck>,
 ) -> impl IntoResponse {
-    if let Err(e) = federation_repository::mark_outbox_delivered_by_logical_id(
-        &state.pool,
-        &ack.logical_msg_id,
-    )
-    .await
+    info!(peer = %peer.node_id, logical_id = %ack.logical_msg_id, status = %ack.status, "POST /s2s/ack");
+
+    if let Err(e) =
+        federation_repository::mark_outbox_delivered_by_logical_id(&state.pool, &ack.logical_msg_id)
+            .await
     {
-        eprintln!("[s2s] ack db error: {e}");
+        error!(logical_id = %ack.logical_msg_id, err = %e, "ack db update failed");
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"error": "internal error"})),
@@ -407,49 +391,45 @@ pub async fn receive_ack(
 
 // ─── GET /users/federated/:address/keys ──────────────────────────────────────
 
-/// Client-facing proxy: fetch the prekey bundle of a remote user.
-///
-/// `address` is the full federated address: "bob@node-b.hushnet.net".
-///
-/// This node (Node A) authenticates the request from Client A, resolves the
-/// target node, makes an authenticated S2S call to Node B, and returns the
-/// bundle verbatim. OTPKs are consumed on Node B; Node A never stores them.
-///
-/// If the target node's address matches this node's own node_id, the request
-/// is redirected to the local GET /users/:id/keys path instead (handled in the
-/// same response to avoid a network round-trip).
 pub async fn federated_keys(
     State(state): State<AppState>,
     crate::middlewares::auth::AuthenticatedDevice(_device): crate::middlewares::auth::AuthenticatedDevice,
     Path(address): Path<String>,
 ) -> impl IntoResponse {
+    info!(%address, "GET /users/federated/:address/keys");
+
     let (username, node_id) = match parse_federated_address(&address) {
         Some(parts) => parts,
         None => {
+            warn!(%address, "invalid federated address (no '@')");
             return (
                 StatusCode::BAD_REQUEST,
                 Json(json!({"error": "invalid federated address, expected user@node"})),
             )
-                .into_response()
+                .into_response();
         }
     };
 
-    // If the address points to this node, serve locally.
+    debug!(%username, %node_id, "parsed federated address");
+
+    // Local shortcut: address points to this node.
     if node_id == state.this_node_id {
+        debug!(%username, "address is local, serving directly");
         let user_id =
             match federation_repository::get_local_user_id_by_username(&state.pool, username)
                 .await
             {
                 Ok(Some(id)) => id,
                 Ok(None) => {
+                    warn!(%username, "local user not found");
                     return (
                         StatusCode::NOT_FOUND,
                         Json(json!({"error": "user not found"})),
                     )
-                        .into_response()
+                        .into_response();
                 }
                 Err(e) => {
-                    eprintln!("[federated_keys] local db error: {e}");
+                    error!(%username, err = %e, "db error on local key fetch");
                     return (
                         StatusCode::INTERNAL_SERVER_ERROR,
                         Json(json!({"error": "internal error"})),
@@ -458,9 +438,12 @@ pub async fn federated_keys(
                 }
             };
         return match device_repository::get_device_bundle(&state.pool, &user_id).await {
-            Ok(bundle) => (StatusCode::OK, Json(bundle)).into_response(),
+            Ok(bundle) => {
+                debug!(%username, devices = bundle.len(), "local bundle returned");
+                (StatusCode::OK, Json(bundle)).into_response()
+            }
             Err(e) => {
-                eprintln!("[federated_keys] local bundle error: {e}");
+                error!(%username, err = %e, "db error fetching local bundle");
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     Json(json!({"error": "internal error"})),
@@ -470,29 +453,32 @@ pub async fn federated_keys(
         };
     }
 
-    // Remote node: look up in federation_nodes or fall back to registry.
+    // Remote: resolve the target node.
+    debug!(%node_id, "resolving remote node");
     let node = match federation_repository::get_federation_node(&state.pool, node_id).await {
-        Ok(Some(n)) => n,
+        Ok(Some(n)) => {
+            debug!(%node_id, api_url = %n.api_url, "node found in local cache");
+            n
+        }
         Ok(None) => {
-            // Try to discover via registry.
+            info!(%node_id, "node not in cache, querying registry");
             let url = format!("{}/api/registry/nodes/{}", state.registry_url, node_id);
+            debug!(registry_url = %url, "registry lookup");
             match state.http_client.get(&url).send().await {
                 Ok(resp) if resp.status().is_success() => {
                     match resp.json::<serde_json::Value>().await {
                         Ok(body) => {
                             let api_url = body["api_url"].as_str().unwrap_or("");
                             let pubkey = body["public_key_b64"].as_str().unwrap_or("");
+                            debug!(%node_id, %api_url, "registry returned node info");
                             match federation_repository::upsert_federation_node(
-                                &state.pool,
-                                node_id,
-                                api_url,
-                                pubkey,
+                                &state.pool, node_id, api_url, pubkey,
                             )
                             .await
                             {
                                 Ok(n) => n,
                                 Err(e) => {
-                                    eprintln!("[federated_keys] upsert node failed: {e}");
+                                    error!(%node_id, err = %e, "failed to cache node from registry");
                                     return (
                                         StatusCode::INTERNAL_SERVER_ERROR,
                                         Json(json!({"error": "internal error"})),
@@ -501,7 +487,8 @@ pub async fn federated_keys(
                                 }
                             }
                         }
-                        Err(_) => {
+                        Err(e) => {
+                            error!(%node_id, err = %e, "malformed registry response");
                             return (
                                 StatusCode::BAD_GATEWAY,
                                 Json(json!({"error": "malformed registry response"})),
@@ -510,17 +497,26 @@ pub async fn federated_keys(
                         }
                     }
                 }
-                _ => {
+                Ok(resp) => {
+                    warn!(%node_id, status = %resp.status(), "registry returned non-200");
                     return (
                         StatusCode::NOT_FOUND,
                         Json(json!({"error": "target node not found in registry"})),
                     )
                         .into_response();
                 }
+                Err(e) => {
+                    error!(%node_id, err = %e, "registry request failed");
+                    return (
+                        StatusCode::SERVICE_UNAVAILABLE,
+                        Json(json!({"error": "registry unreachable"})),
+                    )
+                        .into_response();
+                }
             }
         }
         Err(e) => {
-            eprintln!("[federated_keys] db error: {e}");
+            error!(%node_id, err = %e, "db error looking up federation node");
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({"error": "internal error"})),
@@ -530,12 +526,15 @@ pub async fn federated_keys(
     };
 
     if node.is_blocked {
+        warn!(%node_id, "node is blocked");
         return (
             StatusCode::FORBIDDEN,
             Json(json!({"error": "target node is blocked"})),
         )
             .into_response();
     }
+
+    info!(%node_id, api_url = %node.api_url, %username, "proxying key fetch to remote node");
 
     let fed_client = FederationClient::new(
         state.http_client.clone(),
@@ -544,9 +543,12 @@ pub async fn federated_keys(
     );
 
     match fed_client.fetch_peer_keys(&node.api_url, username).await {
-        Ok(bundle) => (StatusCode::OK, Json(bundle)).into_response(),
+        Ok(bundle) => {
+            info!(%node_id, %username, devices = bundle.len(), "remote key fetch succeeded");
+            (StatusCode::OK, Json(bundle)).into_response()
+        }
         Err(e) => {
-            eprintln!("[federated_keys] peer key fetch failed: {e}");
+            error!(%node_id, %username, err = %e, "remote key fetch failed");
             (
                 StatusCode::BAD_GATEWAY,
                 Json(json!({"error": format!("peer returned error: {e}")})),
