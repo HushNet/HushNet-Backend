@@ -64,7 +64,11 @@ impl FederationClient {
     /// The returned Vec has one DeviceBundle per device registered for that
     /// user on the remote node. One-time prekeys are consumed by the remote
     /// node on fetch (same semantics as the local GET /users/:id/keys endpoint).
-    pub async fn fetch_peer_keys(&self, api_url: &str, username: &str) -> Result<Vec<DeviceBundle>> {
+    pub async fn fetch_peer_keys(
+        &self,
+        api_url: &str,
+        username: &str,
+    ) -> Result<Vec<DeviceBundle>> {
         let url = format!("{api_url}/s2s/users/{username}/keys");
         self.signed_get(&url)
             .await?
@@ -103,7 +107,8 @@ impl FederationClient {
     /// Query the peer's public node info (used for bootstrapping / key pinning).
     pub async fn fetch_node_info(&self, api_url: &str) -> Result<NodeInfo> {
         // /s2s/info does not require authentication, so this is an unsigned GET.
-        let body = self.http
+        let body = self
+            .http
             .get(format!("{api_url}/s2s/info"))
             .send()
             .await
