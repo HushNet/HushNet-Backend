@@ -25,7 +25,7 @@ pub async fn node_info(State(state): State<AppState>) -> impl IntoResponse {
         node_id: state.this_node_id.clone(),
         api_url: state.this_api_url.clone(),
         public_key_b64: state.node_keys.public_b64.clone(),
-        protocol_version: "0.0.1",
+        protocol_version: "0.0.2",
     };
     (StatusCode::OK, Json(info))
 }
