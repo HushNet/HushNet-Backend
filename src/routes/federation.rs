@@ -33,7 +33,7 @@ pub fn routes() -> Router<AppState> {
         .route("/s2s/ack", post(federation_controller::receive_ack))
         // ── Client-facing federated proxy ────────────────────────────────────
         .route(
-            "/users/federated/{address}/keys",
+            "/s2s/users/federated/{address}/keys",
             get(federation_controller::federated_keys),
         )
 }
