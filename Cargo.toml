@@ -24,4 +24,6 @@ jsonwebtoken = {version = "10.0.0", features = ["rust_crypto"]}
 base64 = "0.22.1"
 rsa = "0.9.8"
 reqwest = { version = "0.12.24", features = ["json", "rustls-tls"] }
+sha2 = "0.10"
+hex = "0.4"
 # TODO : Monitor the RSA and ed25519-dalek crates for updates and security patches.
