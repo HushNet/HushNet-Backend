@@ -35,6 +35,12 @@ services:
       SERVER_HOST: ${SERVER_HOST:-0.0.0.0}
       SERVER_PORT: ${SERVER_PORT:-8080}
       RUST_BACKTRACE: "full"
+      NODE_NAME: ${NODE_NAME:-node-eu1}
+      NODE_HOST: ${NODE_HOST:-host.docker.internal}
+      NODE_API_URL: ${NODE_API_URL:-http://host.docker.internal:8080}
+      REGISTRY_URL: ${REGISTRY_URL:-https://registry.hushnet.net/}
+      CONTACT_EMAIL: ${CONTACT_EMAIL:-ops@hushnet.net}
+      REGISTER_TO_REGISTRY: ${REGISTER_TO_REGISTRY:-true}
     env_file:
       - .env
     ports:
