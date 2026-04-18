@@ -38,14 +38,14 @@ services:
     env_file:
       - .env
     ports:
-      - "${BACKEND_PORT:-8080}:8080"
+      - "${SERVER_PORT:-8080}:${SERVER_PORT:-8080}"
     depends_on:
       postgres:
         condition: service_healthy
     networks:
       - hushnet
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      test: ["CMD", "curl", "-f", "http://localhost:${SERVER_PORT:-8080}/"]
       interval: 30s
       timeout: 3s
       retries: 3
