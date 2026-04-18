@@ -687,7 +687,7 @@ Only the path portion of the URL is signed (no scheme, no host), so the canonica
 
 ```mermaid
 flowchart TD
-    A[Inbound S2S request] --> B{|now − timestamp| ≤ 60s?}
+    A[Inbound S2S request] --> B{"abs(now - timestamp) <= 60s?"}
     B -- no --> R1[401 timestamp out of window]
     B -- yes --> C{node_id in federation_nodes?}
     C -- no --> D[GET registry/nodes/node_id]
