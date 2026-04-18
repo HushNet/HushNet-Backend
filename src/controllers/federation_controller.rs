@@ -9,7 +9,7 @@ use tracing::{debug, error, info, warn};
 
 use crate::{
     app_state::AppState,
-    federation::{client::FederationClient, parse_federated_address},
+    federation::client::FederationClient,
     middlewares::node_auth::AuthenticatedNode,
     models::federation::{
         NodeInfo, S2sAck, S2sMessagePayload, S2sSessionPayload,
@@ -394,23 +394,10 @@ pub async fn receive_ack(
 pub async fn federated_keys(
     State(state): State<AppState>,
     crate::middlewares::auth::AuthenticatedDevice(_device): crate::middlewares::auth::AuthenticatedDevice,
-    Path(address): Path<String>,
+    Path((username, node_id)): Path<(String, String)>,
 ) -> impl IntoResponse {
-    info!(%address, "GET /users/federated/:address/keys");
-
-    let (username, node_id) = match parse_federated_address(&address) {
-        Some(parts) => parts,
-        None => {
-            warn!(%address, "invalid federated address (no '@')");
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(json!({"error": "invalid federated address, expected user@node"})),
-            )
-                .into_response();
-        }
-    };
-
-    debug!(%username, %node_id, "parsed federated address");
+    info!(%username, %node_id, "GET /users/federated/:username/:node_id/keys");
+    let (username, node_id) = (username.as_str(), node_id.as_str());
 
     // Local shortcut: address points to this node.
     if node_id == state.this_node_id {
