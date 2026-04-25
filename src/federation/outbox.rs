@@ -30,6 +30,7 @@ use std::time::Duration;
 
 use sqlx::PgPool;
 use tokio::time;
+use tracing::{debug, error, info, warn};
 
 use crate::{
     models::federation::S2sMessagePayload,
@@ -64,16 +65,20 @@ pub async fn run(
 
         // Housekeeping: purge nonces older than 5 minutes.
         if let Err(e) = federation_repository::purge_expired_nonces(&pool).await {
-            eprintln!("[outbox] nonce purge failed: {e}");
+            warn!(err = %e, "outbox: nonce purge failed");
         }
 
         let entries = match federation_repository::fetch_due_outbox_entries(&pool).await {
             Ok(v) => v,
             Err(e) => {
-                eprintln!("[outbox] db error fetching due entries: {e}");
+                error!(err = %e, "outbox: db error fetching due entries");
                 continue;
             }
         };
+
+        if !entries.is_empty() {
+            info!(count = entries.len(), "outbox: processing due entries");
+        }
 
         for entry in entries {
             let pool = pool.clone();
@@ -87,8 +92,7 @@ pub async fn run(
                 let payload: S2sMessagePayload = match serde_json::from_value(entry.payload) {
                     Ok(p) => p,
                     Err(e) => {
-                        eprintln!("[outbox] cannot deserialize entry {}: {e}", entry.id);
-                        // Malformed entries will never succeed; mark failed immediately.
+                        error!(entry_id = %entry.id, err = %e, "outbox: cannot deserialize entry, marking failed");
                         let _ = federation_repository::record_outbox_failure(
                             &pool,
                             entry.id,
@@ -106,9 +110,10 @@ pub async fn run(
                     {
                         Ok(Some(n)) => n,
                         Ok(None) => {
-                            eprintln!(
-                                "[outbox] unknown target node '{}' for entry {}",
-                                entry.target_node_id, entry.id
+                            warn!(
+                                target_node = %entry.target_node_id,
+                                entry_id = %entry.id,
+                                "outbox: unknown target node"
                             );
                             let _ = federation_repository::record_outbox_failure(
                                 &pool,
@@ -120,20 +125,34 @@ pub async fn run(
                             return;
                         }
                         Err(e) => {
-                            eprintln!("[outbox] db error looking up node: {e}");
+                            error!(err = %e, "outbox: db error looking up node");
                             return;
                         }
                     };
 
+                debug!(
+                    entry_id = %entry.id,
+                    target_node = %entry.target_node_id,
+                    attempt = entry.attempt_count + 1,
+                    "outbox: attempting delivery"
+                );
+
                 match client.forward_messages(&node.api_url, &payload).await {
                     Ok(_) => {
+                        info!(
+                            entry_id = %entry.id,
+                            target_node = %entry.target_node_id,
+                            "outbox: delivery succeeded"
+                        );
                         let _ = federation_repository::mark_outbox_delivered(&pool, entry.id).await;
                     }
                     Err(e) => {
-                        eprintln!(
-                            "[outbox] delivery attempt {} for entry {} failed: {e}",
-                            entry.attempt_count + 1,
-                            entry.id
+                        warn!(
+                            entry_id = %entry.id,
+                            target_node = %entry.target_node_id,
+                            attempt = entry.attempt_count + 1,
+                            err = %e,
+                            "outbox: delivery failed"
                         );
                         let _ = federation_repository::record_outbox_failure(
                             &pool,
