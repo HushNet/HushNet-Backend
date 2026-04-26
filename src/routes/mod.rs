@@ -1,5 +1,6 @@
 pub mod chats;
 pub mod devices;
+pub mod federation;
 pub mod messages;
 pub mod root;
 pub mod sessions;

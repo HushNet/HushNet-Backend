@@ -29,11 +29,21 @@ pub struct OutgoingMessagePayload {
 }
 
 /// Represents the logical message (fan-out over multiple recipient devices).
+///
+/// For local delivery, set `to_user_id`.
+/// For cross-node delivery, also set `to_user_address` ("bob@node-b.hushnet.net").
+/// When `to_user_address` points to a remote node, `to_user_id` is ignored by
+/// the server and the message is forwarded via S2S. Existing clients that do
+/// not send `to_user_address` continue to work unchanged.
 #[derive(Debug, Deserialize)]
 pub struct OutgoingMessage {
     pub chat_id: Uuid,
     pub logical_msg_id: String,
     pub to_user_id: Uuid,
+    /// Optional federated address for cross-node delivery.
+    /// Format: "username@node-host" (e.g. "bob@node-b.hushnet.net").
+    #[serde(default)]
+    pub to_user_address: Option<String>,
     pub payloads: Vec<OutgoingMessagePayload>,
 }
 

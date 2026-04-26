@@ -8,8 +8,10 @@ use axum::{
 };
 
 use tokio::sync::broadcast;
+use tracing::{info, warn};
 
 use crate::models::realtime::RealtimeEvent;
+
 pub async fn ws_route(
     Path(user_id): Path<String>,
     ws: WebSocketUpgrade,
@@ -25,24 +27,41 @@ async fn handle_socket(
 ) {
     let mut rx = tx.subscribe();
 
-    println!("WS connected for user {}", user_id);
+    info!(%user_id, subscribers = tx.receiver_count(), "WS connected");
 
     tokio::spawn(async move {
-        while let Ok(event) = rx.recv().await {
-            let payload_user = event
-                .payload
-                .get("user_id")
-                .and_then(|v| v.as_str())
-                .unwrap_or_default();
+        loop {
+            match rx.recv().await {
+                Ok(event) => {
+                    let payload_user = event
+                        .payload
+                        .get("user_id")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or_default();
 
-            if payload_user == user_id {
-                if let Ok(json) = serde_json::to_string(&event) {
-                    if socket.send(Message::Text(json)).await.is_err() {
-                        break;
+                    if payload_user == user_id {
+                        info!(
+                            %user_id,
+                            event_type = %event.event_type,
+                            "WS dispatching event to client"
+                        );
+                        if let Ok(json) = serde_json::to_string(&event) {
+                            if socket.send(Message::Text(json.into())).await.is_err() {
+                                info!(%user_id, "WS send failed, closing");
+                                break;
+                            }
+                        }
                     }
+                }
+                Err(broadcast::error::RecvError::Lagged(n)) => {
+                    warn!(%user_id, skipped = n, "WS broadcast lagged, events dropped");
+                }
+                Err(broadcast::error::RecvError::Closed) => {
+                    info!(%user_id, "WS broadcast channel closed");
+                    break;
                 }
             }
         }
-        println!("WS closed for user {}", user_id);
+        info!(%user_id, "WS disconnected");
     });
 }

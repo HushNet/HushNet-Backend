@@ -4,7 +4,6 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:17-alpine
-    container_name: hushnet-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
@@ -28,7 +27,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: hushnet-backend
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-dev}@postgres:5432/${POSTGRES_DB:-e2ee}
@@ -37,17 +35,25 @@ services:
       SERVER_HOST: ${SERVER_HOST:-0.0.0.0}
       SERVER_PORT: ${SERVER_PORT:-8080}
       RUST_BACKTRACE: "full"
+      NODE_NAME: ${NODE_NAME:-node-eu1}
+      NODE_HOST: ${NODE_HOST:-host.docker.internal}
+      NODE_API_URL: ${NODE_API_URL:-http://host.docker.internal:8080}
+      REGISTRY_URL: ${REGISTRY_URL:-https://registry.hushnet.net/}
+      CONTACT_EMAIL: ${CONTACT_EMAIL:-ops@hushnet.net}
+      REGISTER_TO_REGISTRY: ${REGISTER_TO_REGISTRY:-true}
     env_file:
       - .env
+    volumes:
+      - node_keys:/app/.hushnet
     ports:
-      - "${BACKEND_PORT:-8080}:8080"
+      - "${SERVER_PORT:-8080}:${SERVER_PORT:-8080}"
     depends_on:
       postgres:
         condition: service_healthy
     networks:
       - hushnet
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      test: ["CMD", "curl", "-f", "http://localhost:${SERVER_PORT:-8080}/"]
       interval: 30s
       timeout: 3s
       retries: 3
@@ -55,6 +61,8 @@ services:
 
 volumes:
   postgres_data:
+    driver: local
+  node_keys:
     driver: local
 
 networks:
