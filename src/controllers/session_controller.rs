@@ -104,11 +104,11 @@ async fn handle_federated_session(
     to_username: &str,
     target_node_id: &str,
 ) -> Result<axum::response::Response, ()> {
-    let sender_username =
-        match user_repository::find_user_by_id(&state.pool, &sender.user_id).await {
-            Ok(Some(u)) => u.username,
-            _ => return Err(()),
-        };
+    let sender_username = match user_repository::find_user_by_id(&state.pool, &sender.user_id).await
+    {
+        Ok(Some(u)) => u.username,
+        _ => return Err(()),
+    };
 
     let node = match resolve_node(state, target_node_id).await {
         Ok(n) => n,
@@ -139,7 +139,10 @@ async fn handle_federated_session(
         state.this_node_id.clone(),
     );
 
-    if let Err(e) = fed_client.forward_session(&node.api_url, &s2s_payload).await {
+    if let Err(e) = fed_client
+        .forward_session(&node.api_url, &s2s_payload)
+        .await
+    {
         eprintln!("[federated session] forward failed: {e}");
         return Ok((
             StatusCode::BAD_GATEWAY,

@@ -18,8 +18,14 @@ pub fn routes() -> Router<AppState> {
             "/s2s/users/:username/keys",
             get(federation_controller::get_user_keys),
         )
-        .route("/s2s/sessions", post(federation_controller::receive_session))
-        .route("/s2s/messages", post(federation_controller::receive_messages))
+        .route(
+            "/s2s/sessions",
+            post(federation_controller::receive_session),
+        )
+        .route(
+            "/s2s/messages",
+            post(federation_controller::receive_messages),
+        )
         .route("/s2s/ack", post(federation_controller::receive_ack))
         // ── Client-facing federated proxy ────────────────────────────────────
         .route(

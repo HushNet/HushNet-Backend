@@ -33,8 +33,7 @@ use tokio::time;
 use tracing::{debug, error, info, warn};
 
 use crate::{
-    models::federation::S2sMessagePayload,
-    repository::federation_repository,
+    models::federation::S2sMessagePayload, repository::federation_repository,
     utils::node_keys::NodeKeys,
 };
 
@@ -82,11 +81,8 @@ pub async fn run(
 
         for entry in entries {
             let pool = pool.clone();
-            let client = FederationClient::new(
-                http_client.clone(),
-                node_keys.clone(),
-                this_node_id.clone(),
-            );
+            let client =
+                FederationClient::new(http_client.clone(), node_keys.clone(), this_node_id.clone());
 
             tokio::spawn(async move {
                 let payload: S2sMessagePayload = match serde_json::from_value(entry.payload) {

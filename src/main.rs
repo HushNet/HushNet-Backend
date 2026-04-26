@@ -35,8 +35,7 @@ async fn main() -> Result<(), anyhow::Error> {
 
     let registry_url =
         env::var("REGISTRY_URL").unwrap_or_else(|_| "https://registry.hushnet.net".into());
-    let node_host =
-        env::var("NODE_HOST").unwrap_or_else(|_| "node-unknown.hushnet.net".into());
+    let node_host = env::var("NODE_HOST").unwrap_or_else(|_| "node-unknown.hushnet.net".into());
     let node_api_url =
         env::var("NODE_API_URL").unwrap_or_else(|_| format!("https://{node_host}/api"));
 

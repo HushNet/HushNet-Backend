@@ -11,10 +11,10 @@ use crate::{
     app_state::AppState,
     federation::client::FederationClient,
     middlewares::node_auth::AuthenticatedNode,
-    models::federation::{
-        NodeInfo, S2sAck, S2sMessagePayload, S2sSessionPayload,
+    models::federation::{NodeInfo, S2sAck, S2sMessagePayload, S2sSessionPayload},
+    repository::{
+        device_repository, federation_repository, message_repository, session_repository,
     },
-    repository::{device_repository, federation_repository, message_repository, session_repository},
 };
 
 // ─── GET /s2s/info ───────────────────────────────────────────────────────────
@@ -229,33 +229,31 @@ pub async fn receive_messages(
         "POST /s2s/messages"
     );
 
-    let recipient_id = match federation_repository::get_local_user_id_by_username(
-        &state.pool,
-        &payload.to_user,
-    )
-    .await
-    {
-        Ok(Some(id)) => {
-            debug!(username = %payload.to_user, local_id = %id, "recipient resolved");
-            id
-        }
-        Ok(None) => {
-            warn!(username = %payload.to_user, "recipient not found or is a shadow record");
-            return (
-                StatusCode::NOT_FOUND,
-                Json(json!({"error": "recipient not found or not local to this node"})),
-            )
-                .into_response();
-        }
-        Err(e) => {
-            error!(username = %payload.to_user, err = %e, "db error resolving recipient");
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"error": "internal error"})),
-            )
-                .into_response();
-        }
-    };
+    let recipient_id =
+        match federation_repository::get_local_user_id_by_username(&state.pool, &payload.to_user)
+            .await
+        {
+            Ok(Some(id)) => {
+                debug!(username = %payload.to_user, local_id = %id, "recipient resolved");
+                id
+            }
+            Ok(None) => {
+                warn!(username = %payload.to_user, "recipient not found or is a shadow record");
+                return (
+                    StatusCode::NOT_FOUND,
+                    Json(json!({"error": "recipient not found or not local to this node"})),
+                )
+                    .into_response();
+            }
+            Err(e) => {
+                error!(username = %payload.to_user, err = %e, "db error resolving recipient");
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({"error": "internal error"})),
+                )
+                    .into_response();
+            }
+        };
 
     let sender_username = payload
         .from_federated_address
@@ -403,8 +401,7 @@ pub async fn federated_keys(
     if node_id == state.this_node_id {
         debug!(%username, "address is local, serving directly");
         let user_id =
-            match federation_repository::get_local_user_id_by_username(&state.pool, username)
-                .await
+            match federation_repository::get_local_user_id_by_username(&state.pool, username).await
             {
                 Ok(Some(id)) => id,
                 Ok(None) => {
@@ -459,7 +456,10 @@ pub async fn federated_keys(
                             let pubkey = body["public_key_b64"].as_str().unwrap_or("");
                             debug!(%node_id, %api_url, "registry returned node info");
                             match federation_repository::upsert_federation_node(
-                                &state.pool, node_id, api_url, pubkey,
+                                &state.pool,
+                                node_id,
+                                api_url,
+                                pubkey,
                             )
                             .await
                             {

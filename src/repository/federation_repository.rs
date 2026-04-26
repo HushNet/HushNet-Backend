@@ -48,11 +48,7 @@ pub async fn get_federation_node(
 // ─── used_node_nonces ────────────────────────────────────────────────────────
 
 /// Returns true if the nonce was fresh (not seen before), false on replay.
-pub async fn claim_nonce(
-    pool: &PgPool,
-    node_id: &str,
-    nonce: &str,
-) -> Result<bool, sqlx::Error> {
+pub async fn claim_nonce(pool: &PgPool, node_id: &str, nonce: &str) -> Result<bool, sqlx::Error> {
     let result = sqlx::query(
         "INSERT INTO used_node_nonces (nonce, node_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
     )
@@ -64,11 +60,10 @@ pub async fn claim_nonce(
 }
 
 pub async fn purge_expired_nonces(pool: &PgPool) -> Result<u64, sqlx::Error> {
-    let result = sqlx::query(
-        "DELETE FROM used_node_nonces WHERE used_at < NOW() - INTERVAL '5 minutes'",
-    )
-    .execute(pool)
-    .await?;
+    let result =
+        sqlx::query("DELETE FROM used_node_nonces WHERE used_at < NOW() - INTERVAL '5 minutes'")
+            .execute(pool)
+            .await?;
     Ok(result.rows_affected())
 }
 

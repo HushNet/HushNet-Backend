@@ -32,9 +32,7 @@
 // that handlers can access it with `Extension<FederationNode>`.
 
 use crate::{
-    app_state::AppState,
-    models::federation::FederationNode,
-    repository::federation_repository,
+    app_state::AppState, models::federation::FederationNode, repository::federation_repository,
 };
 use axum::{
     extract::FromRequestParts,
@@ -69,11 +67,17 @@ impl FromRequestParts<AppState> for AuthenticatedNode {
 
         // ── 1. timestamp check ───────────────────────────────────────────────
         let now = chrono::Utc::now().timestamp();
-        let ts: i64 = ts_str
-            .parse()
-            .map_err(|_| (StatusCode::BAD_REQUEST, "X-Timestamp must be an integer".into()))?;
+        let ts: i64 = ts_str.parse().map_err(|_| {
+            (
+                StatusCode::BAD_REQUEST,
+                "X-Timestamp must be an integer".into(),
+            )
+        })?;
         if (now - ts).abs() > 60 {
-            return Err((StatusCode::UNAUTHORIZED, "timestamp outside 60-second window".into()));
+            return Err((
+                StatusCode::UNAUTHORIZED,
+                "timestamp outside 60-second window".into(),
+            ));
         }
 
         // ── 2. peer public key lookup (DB cache → registry fallback) ─────────
@@ -101,7 +105,12 @@ impl FromRequestParts<AppState> for AuthenticatedNode {
 
         let vk_bytes: [u8; 32] = B64
             .decode(&node.public_key_b64)
-            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "bad cached peer pubkey".into()))?
+            .map_err(|_| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "bad cached peer pubkey".into(),
+                )
+            })?
             .try_into()
             .map_err(|_| {
                 (
@@ -109,8 +118,12 @@ impl FromRequestParts<AppState> for AuthenticatedNode {
                     "peer pubkey must be 32 bytes".into(),
                 )
             })?;
-        let vk = VerifyingKey::from_bytes(&vk_bytes)
-            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "invalid peer pubkey".into()))?;
+        let vk = VerifyingKey::from_bytes(&vk_bytes).map_err(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "invalid peer pubkey".into(),
+            )
+        })?;
 
         vk.verify(canonical.as_bytes(), &sig)
             .map_err(|_| (StatusCode::UNAUTHORIZED, "invalid node signature".into()))?;
@@ -161,24 +174,40 @@ async fn resolve_peer(
         .get(&url)
         .send()
         .await
-        .map_err(|_| (StatusCode::SERVICE_UNAVAILABLE, "registry unreachable".into()))?
+        .map_err(|_| {
+            (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "registry unreachable".into(),
+            )
+        })?
         .error_for_status()
-        .map_err(|_| (StatusCode::UNAUTHORIZED, "peer node not found in registry".into()))?
+        .map_err(|_| {
+            (
+                StatusCode::UNAUTHORIZED,
+                "peer node not found in registry".into(),
+            )
+        })?
         .json::<serde_json::Value>()
         .await
-        .map_err(|_| (StatusCode::BAD_GATEWAY, "malformed registry response".into()))?;
+        .map_err(|_| {
+            (
+                StatusCode::BAD_GATEWAY,
+                "malformed registry response".into(),
+            )
+        })?;
 
-    let api_url = resp["api_url"]
-        .as_str()
-        .ok_or((StatusCode::BAD_GATEWAY, "registry response missing api_url".into()))?;
-    let pubkey = resp["public_key_b64"]
-        .as_str()
-        .ok_or((StatusCode::BAD_GATEWAY, "registry response missing public_key_b64".into()))?;
+    let api_url = resp["api_url"].as_str().ok_or((
+        StatusCode::BAD_GATEWAY,
+        "registry response missing api_url".into(),
+    ))?;
+    let pubkey = resp["public_key_b64"].as_str().ok_or((
+        StatusCode::BAD_GATEWAY,
+        "registry response missing public_key_b64".into(),
+    ))?;
 
-    let node =
-        federation_repository::upsert_federation_node(&state.pool, node_id, api_url, pubkey)
-            .await
-            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "db error".into()))?;
+    let node = federation_repository::upsert_federation_node(&state.pool, node_id, api_url, pubkey)
+        .await
+        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "db error".into()))?;
 
     Ok(node)
 }

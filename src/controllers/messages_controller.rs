@@ -7,7 +7,8 @@ use crate::{
         message::OutgoingMessage,
     },
     repository::{
-        federation_repository, message_repository::{fetch_pending_messages, insert_message},
+        federation_repository,
+        message_repository::{fetch_pending_messages, insert_message},
         user_repository,
     },
 };
@@ -77,8 +78,7 @@ async fn handle_federated_message(
     target_node_id: &str,
 ) -> axum::response::Response {
     // Look up sender's username for the federated address.
-    let sender_username = match user_repository::find_user_by_id(&state.pool, &from_user_id).await
-    {
+    let sender_username = match user_repository::find_user_by_id(&state.pool, &from_user_id).await {
         Ok(Some(u)) => u.username,
         _ => {
             return (
