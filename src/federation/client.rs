@@ -104,25 +104,6 @@ impl FederationClient {
             .context("invalid ack in peer response")
     }
 
-    /// Query the peer's public node info (used for bootstrapping / key pinning).
-    pub async fn fetch_node_info(&self, api_url: &str) -> Result<NodeInfo> {
-        // /s2s/info does not require authentication, so this is an unsigned GET.
-        let body = self
-            .http
-            .get(format!("{api_url}/s2s/info"))
-            .send()
-            .await
-            .context("GET /s2s/info failed")?
-            .error_for_status()
-            .context("peer info endpoint returned error")?
-            .text()
-            .await
-            .context("failed to read node info response body")?;
-
-        let leaked_body: &'static str = Box::leak(body.into_boxed_str());
-        serde_json::from_str::<NodeInfo>(leaked_body).context("invalid node info response")
-    }
-
     // ── Private helpers ───────────────────────────────────────────────────────
 
     async fn signed_get(&self, url: &str) -> Result<reqwest::Response> {

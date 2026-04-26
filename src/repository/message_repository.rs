@@ -51,6 +51,7 @@ pub async fn insert_message(
 ///
 /// The unique constraint `uniq_message_per_device` (added in federation.sql)
 /// makes the ON CONFLICT clause safe without a preceding SELECT.
+#[allow(clippy::too_many_arguments)]
 pub async fn insert_federated_message(
     pool: &PgPool,
     logical_msg_id: &str,
