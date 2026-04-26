@@ -2,9 +2,11 @@ use crate::models::user::User;
 use sqlx::{PgPool, Result};
 
 pub async fn get_all_users(pool: &PgPool) -> Result<Vec<User>> {
-    let users = sqlx::query_as::<_, User>("SELECT * FROM users")
-        .fetch_all(pool)
-        .await?;
+    let users = sqlx::query_as::<_, User>(
+        "SELECT id, username, created_at FROM users WHERE home_node_id IS NULL",
+    )
+    .fetch_all(pool)
+    .await?;
     Ok(users)
 }
 
