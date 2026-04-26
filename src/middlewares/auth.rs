@@ -1,7 +1,6 @@
 // src/middlewares/auth.rs
 use crate::{app_state::AppState, models::device::Devices, repository::device_repository};
 use axum::{
-    async_trait,
     extract::FromRequestParts,
     http::{request::Parts, StatusCode},
 };
@@ -10,7 +9,6 @@ use ed25519_dalek::{Signature, Verifier, VerifyingKey};
 
 pub struct AuthenticatedDevice(pub Devices);
 
-#[async_trait]
 impl FromRequestParts<AppState> for AuthenticatedDevice {
     type Rejection = (StatusCode, String);
 

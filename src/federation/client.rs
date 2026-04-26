@@ -34,7 +34,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use crate::{
     models::{
         device::DeviceBundle,
-        federation::{NodeInfo, S2sAck, S2sMessagePayload, S2sSessionPayload},
+        federation::{S2sAck, S2sMessagePayload, S2sSessionPayload},
     },
     utils::node_keys::NodeKeys,
 };

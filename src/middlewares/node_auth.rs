@@ -37,7 +37,6 @@ use crate::{
     repository::federation_repository,
 };
 use axum::{
-    async_trait,
     extract::FromRequestParts,
     http::{request::Parts, StatusCode},
 };
@@ -56,7 +55,6 @@ use ed25519_dalek::{Signature, Verifier, VerifyingKey};
 /// ```
 pub struct AuthenticatedNode(pub FederationNode);
 
-#[async_trait]
 impl FromRequestParts<AppState> for AuthenticatedNode {
     type Rejection = (StatusCode, String);
 

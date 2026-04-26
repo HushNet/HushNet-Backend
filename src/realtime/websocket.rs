@@ -46,7 +46,7 @@ async fn handle_socket(
                             "WS dispatching event to client"
                         );
                         if let Ok(json) = serde_json::to_string(&event) {
-                            if socket.send(Message::Text(json)).await.is_err() {
+                            if socket.send(Message::Text(json.into())).await.is_err() {
                                 info!(%user_id, "WS send failed, closing");
                                 break;
                             }
